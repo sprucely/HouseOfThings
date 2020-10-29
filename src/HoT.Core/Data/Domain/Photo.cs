@@ -24,6 +24,8 @@ namespace HoT.Core.Data.Domain
                 .WithMany(i => i.Photos)
                 .HasForeignKey(p => p.ItemId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Photo>()
+                .HasIndex(p => p.ItemId);
         }
     }
 }

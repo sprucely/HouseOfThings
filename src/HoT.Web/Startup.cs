@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using HoT.Core.Data;
+using Microsoft.Data.Sqlite;
+using System.Data;
 
 namespace HoT.Web
 {
@@ -33,12 +35,25 @@ namespace HoT.Web
 
             services.AddDbContext<AppDbContext>(options => options.UseSqlite(
                 Configuration.GetConnectionString("DefaultConnection"), 
-                sqliteOptions => {}));
+                sqliteOptions => {
+                    sqliteOptions.MigrationsAssembly("HoT.Core");
+                }));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AppDbContext dbContext)
         {
+            // SQLite specific: Make sure NOCASE collation is overridden
+            var connection = (SqliteConnection)dbContext.Database.GetDbConnection();
+            connection.Open();
+            connection.CreateCollation("NOCASE", (x, y) => 
+            {
+                return string.Compare(x, y, ignoreCase: true);
+            });
+            connection.Close();
+
+            dbContext.Database.Migrate();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

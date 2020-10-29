@@ -8,7 +8,7 @@ namespace HoT.Core.Data.Domain
     {
         public int Id { get; set; }
 
-        public int ParentId { get; set; }
+        public int? ParentId { get; set; }
 
         public string Name { get; set; }
 
@@ -27,6 +27,8 @@ namespace HoT.Core.Data.Domain
                 .WithMany()
                 .HasForeignKey(l => l.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Location>()
+                .HasIndex(l => l.ParentId);
         }
     }
 }
