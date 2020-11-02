@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
 namespace HoT.Core.Data.Domain
@@ -29,6 +30,13 @@ namespace HoT.Core.Data.Domain
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Location>()
                 .HasIndex(l => l.ParentId);
+        }
+
+        public override string ToString()
+        {
+            return $"Location: {Name}" + ((Tags?.Any() ?? false) 
+                ? $"(Tags: {string.Join(", ", Tags.Select(t => t.Name))})" 
+                : "");
         }
     }
 }

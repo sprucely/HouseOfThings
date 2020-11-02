@@ -4,5 +4,8 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"dotnet-test-explorer.testProjectPath": "**/*Test/*Test.csproj",
+		"testExplorer.showOnRun": true
+	}
 }

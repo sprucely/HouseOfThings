@@ -1,49 +1,41 @@
-import React, { Component } from 'react';
-import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
+import React, { Component, useState } from 'react';
+import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
+import { Menu, Input } from 'semantic-ui-react'
+import { NavLink, withRouter } from 'react-router-dom'
 
-export class NavMenu extends Component {
-  static displayName = NavMenu.name;
+export const NavMenu = () => {
+  const [activeItem, setActiveItem] = useState("home");
 
-  constructor (props) {
-    super(props);
-
-    this.toggleNavbar = this.toggleNavbar.bind(this);
-    this.state = {
-      collapsed: true
-    };
+  const handleItemClick = (e, { name }) => {
+    setActiveItem(name);
   }
 
-  toggleNavbar () {
-    this.setState({
-      collapsed: !this.state.collapsed
-    });
-  }
-
-  render () {
-    return (
-      <header>
-        <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
-          <Container>
-            <NavbarBrand tag={Link} to="/">HoT.Web</NavbarBrand>
-            <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
-            <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
-              <ul className="navbar-nav flex-grow">
-                <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/counter">Counter</NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/fetch-data">Fetch data</NavLink>
-                </NavItem>
-              </ul>
-            </Collapse>
-          </Container>
-        </Navbar>
-      </header>
-    );
-  }
+  return (
+    <header>
+      <Menu>
+        <Menu.Item
+          header
+          as={NavLink} to="/"
+          onClick={handleItemClick}
+        >House of Things</Menu.Item>
+        <Menu.Item
+          as={NavLink} to="/"
+          active={activeItem === 'home'}
+          onClick={handleItemClick}
+        >Home</Menu.Item>
+        <Menu.Item 
+          as={NavLink} to="/counter"
+          active={activeItem === 'counter'}
+          onClick={handleItemClick}
+        >Counter</Menu.Item>
+        <Menu.Item
+          as={NavLink} to="/fetch-data"
+          active={activeItem === 'fetch-data'}
+          onClick={handleItemClick}
+        >Fetch data</Menu.Item>
+      </Menu>
+    </header>
+  );
 }

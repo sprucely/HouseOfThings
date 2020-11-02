@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HoT.Core.Data.Domain
 {
@@ -13,5 +14,12 @@ namespace HoT.Core.Data.Domain
         public ICollection<Tag> Tags { get; set; }
 
         public ICollection<Photo> Photos { get; set; }
+
+        public override string ToString()
+        {
+            return $"Item: {Name}" + ((Tags?.Any() ?? false) 
+                ? $"(Tags: {string.Join(", ", Tags.Select(t => t.Name))})" 
+                : "");
+        }
     }
 }
