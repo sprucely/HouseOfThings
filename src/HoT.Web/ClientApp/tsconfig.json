@@ -12,14 +12,21 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react"
+    "jsx": "react",
+    "typeRoots": [
+      "./src/@types", "./node_modules/@types/"
+    ]
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/@types"
   ]
 }
