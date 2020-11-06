@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using HoT.Core.Data;
 using Microsoft.Data.Sqlite;
 using System.Data;
+using System;
 
 namespace HoT.Web
 {
@@ -43,16 +44,7 @@ namespace HoT.Web
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AppDbContext dbContext)
         {
-            // SQLite specific: Make sure NOCASE collation is overridden
-            var connection = (SqliteConnection)dbContext.Database.GetDbConnection();
-            connection.Open();
-            connection.CreateCollation("NOCASE", (x, y) => 
-            {
-                return string.Compare(x, y, ignoreCase: true);
-            });
-            connection.Close();
-
-            dbContext.Database.Migrate();
+            ConfigureDb(dbContext);
 
             if (env.IsDevelopment())
             {
@@ -87,6 +79,22 @@ namespace HoT.Web
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }
             });
+        }
+
+        private void ConfigureDb(AppDbContext dbContext)
+        {
+            var recreateDb = Configuration.GetValue<bool>("RecreateDb");
+
+            if (recreateDb)
+                dbContext.Database.EnsureDeleted();
+
+            dbContext.Database.Migrate();
+            
+            if (recreateDb)
+            {
+                var initialier = new DbInitializer(dbContext);
+                initialier.Initialize().GetAwaiter().GetResult();
+            }
         }
     }
 }

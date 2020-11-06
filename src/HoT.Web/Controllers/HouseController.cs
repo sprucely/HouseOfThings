@@ -12,7 +12,7 @@ using HoT.Core.Data.Models;
 namespace HoT.Web.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class HouseController : ControllerBase
     {
         private readonly ILogger<HouseController> _logger;
@@ -24,7 +24,7 @@ namespace HoT.Web.Controllers
             _dbContext = dbContext;
         }
 
-        [HttpGet("api/locations")]
+        [HttpGet("locations")]
         public async Task<ActionResult<IEnumerable<Location>>> Locations(TagFilterModel filter)
         {
             var ids = filter.Tags.Select(t => t.Id).ToArray();
@@ -34,6 +34,16 @@ namespace HoT.Web.Controllers
                 .ToListAsync();
 
             return locations;
+        }
+
+        [HttpGet("tags/search")]
+        public async Task<ActionResult<IEnumerable<TagModel>>> SearchTags([FromQuery]string q) {
+            var tags = await _dbContext.Tags
+                .Where(t => t.Name.StartsWith(q))
+                .Select(t => new TagModel{ Id = t.Id, Name = t.Name })
+                .ToListAsync();
+
+            return tags;
         }
     }
 }

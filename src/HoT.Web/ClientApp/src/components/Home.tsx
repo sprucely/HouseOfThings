@@ -1,20 +1,26 @@
+import useAxios from 'axios-hooks';
 import React, { useState, useRef } from 'react';
 // @ts-ignore
 import ReactTags, { Tag } from 'react-tag-autocomplete'
 
+
+type TagModel = {
+  id: number,
+  name: string
+}
+
+
 export const Home = () => {
-  const [tags, setTags] = useState<Tag[]>([
-    { id: 1, name: "Apples" },
-    { id: 2, name: "Pears" }
-  ]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
-  const [suggestions] = useState<Tag[]>([
-    { id: 3, name: "Bananas" },
-    { id: 4, name: "Mangos" },
-    { id: 5, name: "Lemons" },
-    { id: 6, name: "Apricots" }
-  ]);
+  const [tagQuery, setTagQuery] = useState("");
 
+  const [
+    { data: suggestions, loading: searching, error: searchError }
+  ] = useAxios<Tag[]>('/api/tags/search?q=' + encodeURIComponent(tagQuery))
+
+  console.log(suggestions);
+  
   const tagRef = useRef<ReactTags>(null);
 
   function handleDelete (i: number) {
@@ -27,6 +33,10 @@ export const Home = () => {
     setTags([...tags, tag])
   }
 
+  function handleInput(query: string) {
+    setTagQuery(query);
+  }
+
   return (
     <div>
       <h1>Hello, worlds!</h1>
@@ -36,6 +46,7 @@ export const Home = () => {
         suggestions={suggestions}
         onDelete={handleDelete}
         onAddition={handleAddition}
+        onInput={handleInput}
         //tagComponent={TagComponent}
         //suggestionComponent={SuggestionComponent}
         classNames={{
