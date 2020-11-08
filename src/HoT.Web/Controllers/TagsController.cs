@@ -30,8 +30,6 @@ namespace HoT.Web.Controllers
             if (string.IsNullOrWhiteSpace(q))
                 return new TagModel[]{};
 
-            _dbContext.OverrideNoCaseCollation();
-
             var tags = await _dbContext.Tags
                 .Where(t => EF.Functions.Collate(t.Name, "NOCASE").StartsWith(q))
                 .Select(t => new TagModel{ Id = t.Id, Name = t.Name })

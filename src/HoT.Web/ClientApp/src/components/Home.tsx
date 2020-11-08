@@ -1,67 +1,44 @@
 import useAxios from 'axios-hooks';
-import React, { useState, useRef } from 'react';
-// @ts-ignore
-import ReactTags, { Tag } from 'react-tag-autocomplete'
+import React, { useState } from 'react';
+import { TagLookup, TagModel } from './TagLookup';
 
 
-type TagModel = {
-  id: number,
-  name: string
-}
+export type TagFilterModel = {
+  tags: TagModel[];
+  includeAllTags: boolean;
+};
 
+export type LocationModel = {
+    id: number;
+    name: string;
+    description: string;
+    moveable: boolean;
+};
 
 export const Home = () => {
-  const [tags, setTags] = useState<Tag[]>([]);
 
-  const [tagQuery, setTagQuery] = useState("");
+  //const [tagFilter, setTagFilter] = useState({ tags: [] } as TagFilterModel);
 
-  const [
-    { data: suggestions, loading: searching, error: searchError }
-  ] = useAxios<Tag[]>('/api/tags/search?q=' + encodeURIComponent(tagQuery))
+  const [, searchLocations] = useAxios<LocationModel[]>(
+    { 
+      url: '/api/locations/search',
+      method: 'POST'
+    },
+    { manual: true });
 
-  console.log(suggestions);
-  
-  const tagRef = useRef<ReactTags>(null);
-
-  function handleDelete (i: number) {
-    const newTags = tags.slice(0);
-    newTags.splice(i, 1);
-    setTags(newTags);
+  async function handleTagsChanged(newTags: TagModel[])
+  {
+    const filter = { tags: newTags, includeAllTags: true }
+    //setTagFilter(filter);
+    const { data: locations } = await searchLocations({ data: filter });
+    console.log(locations);
   }
 
-  function handleAddition (tag: Tag) {
-    setTags([...tags, tag])
-  }
 
-  function handleInput(query: string) {
-    setTagQuery(query);
-  }
 
   return (
     <div>
-      <h1>Hello, worlds!</h1>
-      <ReactTags
-        ref={tagRef}
-        tags={tags}
-        suggestions={suggestions}
-        onDelete={handleDelete}
-        onAddition={handleAddition}
-        onInput={handleInput}
-        //tagComponent={TagComponent}
-        //suggestionComponent={SuggestionComponent}
-        classNames={{
-          root: 'react-tags',
-          rootFocused: 'is-focused',
-          selected: 'react-tags__selected',
-          selectedTag: 'ui button',//'react-tags__selected-tag',
-          selectedTagName: 'react-tags__selected-tag-name',
-          search: 'react-tags__search',
-          //searchWrapper: 'react-tags__search-wrapper',
-          searchInput: 'ui input focus', //'react-tags__search-input',
-          suggestions: 'react-tags__suggestions',
-          suggestionActive: 'is-active',
-          suggestionDisabled: 'is-disabled'
-        }} />
+      <TagLookup onTagsChanged={handleTagsChanged} />
     </div>
   );
 }

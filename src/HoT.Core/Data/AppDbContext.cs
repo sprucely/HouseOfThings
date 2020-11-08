@@ -11,12 +11,12 @@ namespace HoT.Core.Data
     {
         public AppDbContext()
         {
-
+            this.OverrideNoCaseCollation();
         }
 
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options)
         {
-            
+            this.OverrideNoCaseCollation();
         }
 
         public DbSet<Item> Items { get; set; }  
@@ -35,6 +35,10 @@ namespace HoT.Core.Data
         {
             // SQLite specific: Default to always using NOCASE collation
             modelBuilder.UseCollation("NOCASE");
+
+            modelBuilder.Entity<Tag>()
+                .Property(t => t.Name)
+                .UseCollation("NOCASE");
 
             LocationClosure.OnModelCreating(modelBuilder);
             Location.OnModelCreating(modelBuilder);
