@@ -67,6 +67,8 @@ namespace HoT.Web.Controllers
                     .Where(l => childLocationIds.Contains(l.Id));
             }
 
+            filteredLocations = filteredLocations.OrderBy(l => l.ParentId).ThenBy(l => l.Sort);
+
             var results = await filteredLocations
                 .Select(l => new LocationModel{ Id = l.Id, Name = l.Name, Description = l.Description, Moveable = l.Moveable})
                 .ToListAsync();

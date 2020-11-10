@@ -36,10 +36,6 @@ namespace HoT.Core.Data
             // SQLite specific: Default to always using NOCASE collation
             modelBuilder.UseCollation("NOCASE");
 
-            modelBuilder.Entity<Tag>()
-                .Property(t => t.Name)
-                .UseCollation("NOCASE");
-
             LocationClosure.OnModelCreating(modelBuilder);
             Location.OnModelCreating(modelBuilder);
             Photo.OnModelCreating(modelBuilder);

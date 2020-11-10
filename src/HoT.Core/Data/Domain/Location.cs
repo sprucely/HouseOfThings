@@ -11,6 +11,8 @@ namespace HoT.Core.Data.Domain
 
         public int? ParentId { get; set; }
 
+        public string Sort { get; set; }
+
         public string Name { get; set; }
 
         public string Description { get; set; }
@@ -29,7 +31,7 @@ namespace HoT.Core.Data.Domain
                 .HasForeignKey(l => l.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Location>()
-                .HasIndex(l => l.ParentId);
+                .HasIndex(l => new { l.ParentId, l.Sort });
         }
 
         public override string ToString()

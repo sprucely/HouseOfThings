@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HoT.Core.Data.Domain;
+using HoT.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace HoT.Core.Data
@@ -43,7 +44,20 @@ namespace HoT.Core.Data
             if (location != null)
                 return location;
 
-            location = new Location{ Name = name, ParentId = parentId, Tags = new List<Tag>() };
+            var previousSiblingSort = (await _dbContext.Locations
+                .Where(l => l.ParentId == parentId)
+                .OrderByDescending(l => l.Sort)
+                .Select(l => l.Sort)
+                .FirstOrDefaultAsync())
+                ?? "";
+
+            location = new Location
+            {
+                Name = name,
+                ParentId = parentId,
+                Tags = new List<Tag>(),
+                Sort = previousSiblingSort.GetNextMidstring("")
+            };
             
             _dbContext.Locations.Add(location);
 
