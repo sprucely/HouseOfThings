@@ -4,10 +4,11 @@ import SortableTree, { ExtendedNodeData, TreeIndex, TreeItem, TreeNode } from 'r
 
 import { TagLookup } from './TagLookup';
 import { LocationFilterModel, TagModel } from '../types';
-import { Button } from 'semantic-ui-react';
+import { Button, Popup } from 'semantic-ui-react';
 
 interface LocationTreeItem extends TreeItem {
   id: number;
+  parentId: number | null;
   moveable: boolean;
 }
 
@@ -42,12 +43,22 @@ export const Home = () => {
   function generateNodeProps(data: ExtendedNodeData) {
     const location = data.node as LocationTreeItem;
     return {
-      buttons: [(
-        <Button onClick={() => {
-          console.log(JSON.stringify(location));
-          setLocationFilter({ locationId: location.id });
-        }}>Select</Button>
-      )]
+      buttons: [
+        ...[location.id !== locationFilter?.locationId && data.treeIndex > 0
+          ? [(<Popup content='Enter' trigger={(<Button icon='sign-in'
+            onClick={() => { setLocationFilter({ locationId: location.id }); }} />)} />)]
+          : []],
+        ...[location.parentId !== null && data.treeIndex === 0
+          ? [(<Popup content='Exit' trigger={(<Button icon='sign-out'
+            onClick={() => { setLocationFilter({ locationId: location.parentId || 0 }); }} />)} />)]
+          : []],
+        ...[true
+          ? [(<Popup content='Add Container' trigger={(<Button icon='add square' onClick={() => { }} />)} />)]
+          : []],
+        ...[true
+          ? [(<Popup content='Add Thing' trigger={(<Button icon='add' onClick={() => { }} />)} />)]
+          : []]
+      ]
     };
   }
 
