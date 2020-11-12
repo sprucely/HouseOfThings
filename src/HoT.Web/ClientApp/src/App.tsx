@@ -5,6 +5,7 @@ import { Home } from './components/Home';
 import { FetchData } from './components/FetchData';
 import { Counter } from './components/Counter';
 
+import 'react-sortable-tree/style.css';
 import 'semantic-ui-css/semantic.min.css'
 // import logo from './logo.svg';
 import './App.css';

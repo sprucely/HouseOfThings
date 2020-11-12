@@ -2,13 +2,10 @@ import useAxios from 'axios-hooks';
 import React, { useState, useRef } from 'react';
 // @ts-ignore
 import ReactTags, { Tag } from 'react-tag-autocomplete';
+
 import './TagStyles.css';
+import { TagModel } from '../types';
 
-
-export type TagModel = {
-  id: number,
-  name: string
-}
 
 type TagLookupProps = {
   onTagsChanged: (tags: TagModel[]) => void;

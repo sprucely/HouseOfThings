@@ -1,44 +1,66 @@
 import useAxios from 'axios-hooks';
-import React, { useState } from 'react';
-import { TagLookup, TagModel } from './TagLookup';
+import React, { useEffect, useState } from 'react';
+import SortableTree, { ExtendedNodeData, TreeIndex, TreeItem, TreeNode } from 'react-sortable-tree';
 
+import { TagLookup } from './TagLookup';
+import { LocationFilterModel, TagModel } from '../types';
+import { Button } from 'semantic-ui-react';
 
-export type TagFilterModel = {
-  tags: TagModel[];
-  includeAllTags: boolean;
-};
-
-export type LocationModel = {
-    id: number;
-    name: string;
-    description: string;
-    moveable: boolean;
-};
+interface LocationTreeItem extends TreeItem {
+  id: number;
+  moveable: boolean;
+}
 
 export const Home = () => {
+  const [locationFilter, setLocationFilter] = useState<LocationFilterModel>();
 
-  //const [tagFilter, setTagFilter] = useState({ tags: [] } as TagFilterModel);
+  const [{ data: locations, loading: locationsLoading, error: locationsError }
+    , searchLocations] = useAxios<LocationTreeItem[]>(
+      {
+        url: '/api/locations/search',
+        method: 'POST'
+      },
+      { manual: true });
 
-  const [, searchLocations] = useAxios<LocationModel[]>(
-    { 
-      url: '/api/locations/search',
-      method: 'POST'
-    },
-    { manual: true });
+  useEffect(() => {
+    locationFilter && searchLocations({ data: locationFilter });
+  }, [locationFilter, searchLocations]);
 
-  async function handleTagsChanged(newTags: TagModel[])
-  {
-    const filter = { tags: newTags, includeAllTags: true }
-    //setTagFilter(filter);
-    const { data: locations } = await searchLocations({ data: filter });
-    console.log(locations);
+  function handleTagsChanged(newTags: TagModel[]) {
+    setLocationFilter({ tagFilter: { tags: newTags, includeAllTags: true } })
   }
 
+  function handleTreeChange(treeData: TreeItem | LocationTreeItem) {
+    console.log(treeData);
+  }
 
+  function getNodeKey(treeNode: TreeNode & TreeIndex) {
+    const locationNode = treeNode.node as LocationTreeItem;
+    return locationNode.id;
+  }
+
+  function generateNodeProps(data: ExtendedNodeData) {
+    const location = data.node as LocationTreeItem;
+    return {
+      buttons: [(
+        <Button onClick={() => {
+          console.log(JSON.stringify(location));
+          setLocationFilter({ locationId: location.id });
+        }}>Select</Button>
+      )]
+    };
+  }
 
   return (
     <div>
       <TagLookup onTagsChanged={handleTagsChanged} />
+      <SortableTree
+        treeData={locations}
+        onChange={handleTreeChange}
+        getNodeKey={getNodeKey}
+        isVirtualized={false}
+        generateNodeProps={generateNodeProps}
+      />
     </div>
   );
 }
