@@ -5,6 +5,9 @@ namespace HoT.Core.Data.Models
     public class LocationFilterModel
     {
         public TagFilterModel TagFilter { get; set; }
+        
         public int? LocationId { get; set; }
+
+        public int? ParentId { get; set; }
     }
 }

@@ -26,17 +26,18 @@ namespace HoT.Web.Controllers
 
         [HttpPost]
         [Route("search")]
-        public async Task<ActionResult<IEnumerable<LocationModel>>> Search([FromBody]LocationFilterModel locationFilter) {
-            if (locationFilter.LocationId == null && !(locationFilter.TagFilter?.Tags?.Any() ?? false))
-                return new LocationModel[]{};
-
-            var filteredLocations = locationFilter.LocationId == null
-                ? GetLocationsByTagFilter(locationFilter.TagFilter)
-                : GetLocationsByLocationId(locationFilter.LocationId);
-
-            filteredLocations = filteredLocations.OrderBy(l => l.ParentId).ThenBy(l => l.Sort);
+        public async Task<ActionResult<IEnumerable<LocationModel>>> Search([FromBody] LocationFilterModel locationFilter)
+        {
+            var filteredLocations = locationFilter switch
+            {
+                { TagFilter: { Tags: { Count: > 0 } } } => GetLocationsByTagFilter(locationFilter.TagFilter),
+                { LocationId: not null } => GetLocationsByLocationId(locationFilter.LocationId),
+                _ => GetLocationsByParentId(locationFilter.ParentId)
+            };
 
             var models = await filteredLocations
+                .OrderBy(l => l.ParentId)
+                .ThenBy(l => l.Sort)
                 .Select(l => new LocationModel
                 {
                     Id = l.Id,
@@ -49,10 +50,10 @@ namespace HoT.Web.Controllers
                 .ToListAsync();
 
             var modelsById = models.ToDictionary(m => m.Id);
-
             var results = new List<LocationModel>();
 
-            models.ForEach(m => {
+            models.ForEach(m =>
+            {
                 if (m.ParentId != null && modelsById.TryGetValue(m.ParentId.Value, out var parent))
                 {
                     parent.Children ??= new List<LocationModel>();
@@ -67,15 +68,29 @@ namespace HoT.Web.Controllers
             return results;
         }
 
+        private IQueryable<Location> GetLocationsByParentId(int? parentId)
+        {
+            var locationIds = _dbContext.Locations
+                .Where(l => l.ParentId == parentId)
+                .Select(l => l.Id);
+
+            var childLocationIds = _dbContext.LocationsClosures
+                .Where(lc => locationIds.Contains(lc.ParentId))
+                .Select(lc => lc.ChildId);
+
+            return _dbContext.Locations
+                .Where(l => childLocationIds.Contains(l.Id));
+        }
+
         private IQueryable<Location> GetLocationsByLocationId(int? locationId)
         {
-                var childLocationIds = _dbContext.LocationsClosures
-                    .Where(lc => lc.ParentId == locationId)
-                    .Select(lc => lc.ChildId);
+            var childLocationIds = _dbContext.LocationsClosures
+                .Where(lc => lc.ParentId == locationId)
+                .Select(lc => lc.ChildId);
 
 
-                return _dbContext.Locations
-                    .Where(l => childLocationIds.Contains(l.Id));
+            return _dbContext.Locations
+                .Where(l => childLocationIds.Contains(l.Id));
         }
 
         private IQueryable<Location> GetLocationsByTagFilter(TagFilterModel tagFilter)
@@ -89,9 +104,9 @@ namespace HoT.Web.Controllers
                 // return locations whose selves or ancestors are tagged with ALL given tags
                 var taggedLocationChildren =
                     from lt in _dbContext.LocationsTags.Where(lt => tagIds.Contains(lt.TagId))
-                    join lc in _dbContext.LocationsClosures on lt.LocationId equals lc.ParentId 
+                    join lc in _dbContext.LocationsClosures on lt.LocationId equals lc.ParentId
                     select new { lt.TagId, lc.ChildId };
-                
+
                 var locationChildrenWithAllTags =
                     from tc in taggedLocationChildren.Distinct()
                     group tc by tc.ChildId into g
@@ -115,7 +130,7 @@ namespace HoT.Web.Controllers
 
                 filteredLocations = _dbContext.Locations
                     .Where(l => childLocationIds.Contains(l.Id));
-            }        
+            }
 
             return filteredLocations;
         }

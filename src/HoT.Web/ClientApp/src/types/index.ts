@@ -12,4 +12,5 @@ export type TagFilterModel = {
 export type LocationFilterModel = {
   tagFilter?: TagFilterModel;
   locationId?: number; 
+  parentId?: number | null;
 };

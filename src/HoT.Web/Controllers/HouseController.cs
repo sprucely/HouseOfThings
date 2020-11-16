@@ -31,6 +31,7 @@ namespace HoT.Web.Controllers
 
             var locations = await _dbContext.Locations
                 .Where(l => ids.All(i => l.Tags.Any(t => t.Id == i)))
+                .AsNoTracking()
                 .ToListAsync();
 
             return locations;
@@ -41,6 +42,7 @@ namespace HoT.Web.Controllers
             var tags = await _dbContext.Tags
                 .Where(t => t.Name.StartsWith(q))
                 .Select(t => new TagModel{ Id = t.Id, Name = t.Name })
+                .AsNoTracking()
                 .ToListAsync();
 
             return tags;

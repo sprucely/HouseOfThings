@@ -63,7 +63,8 @@ namespace HoT.Core.Data
 
             var allTagNames = name.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Concat(tagNames)
-                .Distinct(StringComparer.OrdinalIgnoreCase);
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .RemoveStopWords();
 
             if (allTagNames.Any())
             {

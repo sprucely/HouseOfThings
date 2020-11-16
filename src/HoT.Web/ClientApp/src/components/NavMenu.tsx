@@ -15,20 +15,15 @@ export const NavMenu = () => {
         header
       >House of Things</Menu.Item>
       <Menu.Item
-        as={NavLink} name="home" exact to="/"
-        active={activeItem === 'home'}
+        as={NavLink} name="locations" exact to="/"
+        active={activeItem === 'locations'}
         onClick={handleItemClick}
-      >Home</Menu.Item>
+      >Locations</Menu.Item>
       <Menu.Item 
-        as={NavLink} name="counter" to="/counter"
-        active={activeItem === 'counter'}
+        as={NavLink} name="things" to="/things"
+        active={activeItem === 'things'}
         onClick={handleItemClick}
-      >Counter</Menu.Item>
-      <Menu.Item
-        as={NavLink} name="" to="/fetch-data"
-        active={activeItem === 'fetch-data'}
-        onClick={handleItemClick}
-      >Fetch data</Menu.Item>
+      >Things</Menu.Item>
     </Menu>
   );
 }

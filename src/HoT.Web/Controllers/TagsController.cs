@@ -33,6 +33,7 @@ namespace HoT.Web.Controllers
             var tags = await _dbContext.Tags
                 .Where(t => EF.Functions.Collate(t.Name, "NOCASE").StartsWith(q))
                 .Select(t => new TagModel{ Id = t.Id, Name = t.Name })
+                .AsNoTracking()
                 .ToListAsync();
 
             return tags;
