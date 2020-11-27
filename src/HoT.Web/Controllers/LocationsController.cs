@@ -42,10 +42,11 @@ namespace HoT.Web.Controllers
                 {
                     Id = l.Id,
                     ParentId = l.ParentId,
-                    Title = l.Name,
-                    Subtitle = l.Description,
+                    Name = l.Name,
+                    Description = l.Description,
                     Moveable = l.Moveable,
-                    Expanded = true
+                    Expanded = true,
+                    Children = new List<LocationModel>()
                 })
                 .ToListAsync();
 
@@ -56,7 +57,6 @@ namespace HoT.Web.Controllers
             {
                 if (m.ParentId != null && modelsById.TryGetValue(m.ParentId.Value, out var parent))
                 {
-                    parent.Children ??= new List<LocationModel>();
                     parent.Children.Add(m);
                 }
                 else

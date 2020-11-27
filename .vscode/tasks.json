@@ -37,6 +37,19 @@
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Sleepdelay",
+            "type": "shell",
+            "command": "sleep 12",
+            "windows": {
+                "command": "ping 127.0.0.1 -n 6 > nul"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            }
         }
     ]
 }

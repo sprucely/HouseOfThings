@@ -1,10 +1,11 @@
-import useAxios from 'axios-hooks';
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 // @ts-ignore
 import ReactTags, { Tag } from 'react-tag-autocomplete';
 
 import './TagStyles.css';
 import { TagModel } from '../types';
+import Axios from 'axios';
+import { none, useState } from '@hookstate/core';
 
 
 type TagLookupProps = {
@@ -15,41 +16,35 @@ type TagLookupProps = {
 export const TagLookup = (props : TagLookupProps) => {
   const { onTagsChanged } = props;
 
-  const [tags, setTags] = useState<TagModel[]>([]);
-
-  const [tagQuery, setTagQuery] = useState("");
-
-  const [{ data: suggestions }] = useAxios<TagModel[]>('/api/tags/search?q=' + encodeURIComponent(tagQuery))
-
-  console.log(suggestions);
+  const tags = useState<TagModel[]>([]);
+  const suggestions = useState<TagModel[]>([]);
+  
+  const searchTagsAsync = async (query: string) => {
+    const result = await Axios.get<TagModel[]>("/api/tags/search?q=" + encodeURIComponent(query));
+    return result.data || [];
+  }
 
   const tagRef = useRef<ReactTags>(null);
 
   function handleDelete(i: number) {
-    const newTags = tags.slice(0);
-    newTags.splice(i, 1);
-    setTags(newTags);
-    onTagsChanged(newTags);
+    tags[i].set(none);
+    onTagsChanged(tags.get());
   }
 
   function handleAddition(tag: Tag) {
-    const newTags = [...tags, tag];
-    setTags(newTags);
-    onTagsChanged(newTags);
-  }
-
-  function handleInput(query: string) {
-    setTagQuery(query);
+    const tagClone = JSON.parse(JSON.stringify(tag)) as Tag;
+    tags.merge([tagClone]);
+    onTagsChanged(tags.get());
   }
 
   return (
     <ReactTags
       ref={tagRef}
-      tags={tags}
-      suggestions={suggestions}
+      tags={tags.get()}
+      suggestions={(!suggestions.promised && !suggestions.error && suggestions.get()) || []}
       onDelete={handleDelete}
       onAddition={handleAddition}
-      onInput={handleInput}
+      onInput={(value: string) => {suggestions.set(searchTagsAsync(value))}}
       inputWidth={20}
       autoResize={false}
       //tagComponent={TagComponent}
