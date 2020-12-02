@@ -29,6 +29,8 @@ namespace HoT.Core.Data
 
         public DbSet<LocationTag> LocationsTags { get; set; }
 
+        public DbSet<LocationType> LocationTypes { get; set; }
+
         public DbSet<Tag> Tags { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,6 +43,8 @@ namespace HoT.Core.Data
             Photo.OnModelCreating(modelBuilder);
             ItemTag.OnModelCreating(modelBuilder);
             LocationTag.OnModelCreating(modelBuilder);
+            Tag.OnModelCreating(modelBuilder);
+            LocationType.OnModelCreating(modelBuilder);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

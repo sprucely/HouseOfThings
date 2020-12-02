@@ -5,12 +5,6 @@ namespace HoT.Core.Data.Domain
 {
 
     // Based on https://dirtsimple.org/2010/11/simplest-way-to-do-tree-based-queries.html
-    //
-    // insert into closure(parent, child, depth)
-    // select p.parent, c.child, p.depth+c.depth+1
-    // from closure p, closure c
-    // where p.child=PARENT_ITEM and c.parent=CHILD_ITEM
-
     public class LocationClosure
     {
         public int ParentId { get; set; }

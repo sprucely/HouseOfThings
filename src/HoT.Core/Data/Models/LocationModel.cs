@@ -16,6 +16,8 @@ namespace HoT.Core.Data.Models
 
         public bool Moveable { get; set; }
 
+        public string LocationType { get; set; }
+
         public List<LocationModel> Children { get; set; }
     }
 }

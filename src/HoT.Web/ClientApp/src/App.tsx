@@ -4,9 +4,11 @@ import { Layout } from './components/Layout';
 import { Locations } from './components/Locations';
 import { Things } from './components/Things';
 
-import 'semantic-ui-css/semantic.min.css'
+import 'semantic-ui-css/semantic.min.css';
 // import logo from './logo.svg';
 import './App.css';
+
+import './css/fonts/flaticon/flaticon.css';
 
 function App() {
   return (

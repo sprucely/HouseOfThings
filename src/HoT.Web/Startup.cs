@@ -39,12 +39,14 @@ namespace HoT.Web
                 sqliteOptions => {
                     sqliteOptions.MigrationsAssembly("HoT.Core");
                 }));
+
+            services.AddScoped<IDbHelper, DbHelper>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AppDbContext dbContext)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AppDbContext dbContext, IDbHelper dbHelper)
         {
-            ConfigureDb(dbContext);
+            ConfigureDb(dbContext, dbHelper);
 
             if (env.IsDevelopment())
             {
@@ -81,7 +83,7 @@ namespace HoT.Web
             });
         }
 
-        private void ConfigureDb(AppDbContext dbContext)
+        private void ConfigureDb(AppDbContext dbContext, IDbHelper dbHelper)
         {
             var recreateDb = Configuration.GetValue<bool>("RecreateDb");
 
@@ -92,7 +94,7 @@ namespace HoT.Web
             
             if (recreateDb)
             {
-                var initialier = new DbInitializer(dbContext);
+                var initialier = new DbInitializer(dbContext, dbHelper);
                 initialier.Initialize().GetAwaiter().GetResult();
             }
         }

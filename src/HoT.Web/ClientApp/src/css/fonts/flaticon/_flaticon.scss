@@ -1,0 +1,68 @@
+    /*
+    Flaticon icon font: Flaticon
+    Creation date: 02/12/2020 04:06
+    */
+
+    @font-face {
+  font-family: "Flaticon";
+  src: url("./Flaticon.eot");
+  src: url("./Flaticon.eot?#iefix") format("embedded-opentype"),
+       url("./Flaticon.woff2") format("woff2"),
+       url("./Flaticon.woff") format("woff"),
+       url("./Flaticon.ttf") format("truetype"),
+       url("./Flaticon.svg#Flaticon") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: "Flaticon";
+    src: url("./Flaticon.svg#Flaticon") format("svg");
+  }
+}
+
+    .fi:before{
+        display: inline-block;
+  font-family: "Flaticon";
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  line-height: 1;
+  text-decoration: inherit;
+  text-rendering: optimizeLegibility;
+  text-transform: none;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+    }
+
+    .flaticon-room:before { content: "\f100"; }
+.flaticon-cabinet:before { content: "\f101"; }
+.flaticon-closet:before { content: "\f102"; }
+.flaticon-folder:before { content: "\f103"; }
+.flaticon-bin:before { content: "\f104"; }
+.flaticon-shelf2:before { content: "\f105"; }
+.flaticon-shelf1:before { content: "\f106"; }
+.flaticon-freezer:before { content: "\f107"; }
+.flaticon-fridge:before { content: "\f108"; }
+.flaticon-surface:before { content: "\f109"; }
+.flaticon-box:before { content: "\f10a"; }
+.flaticon-drawer:before { content: "\f10b"; }
+.flaticon-house:before { content: "\f10c"; }
+.flaticon-stairs:before { content: "\f10d"; }
+    
+    $font-Flaticon-room: "\f100";
+    $font-Flaticon-cabinet: "\f101";
+    $font-Flaticon-closet: "\f102";
+    $font-Flaticon-folder: "\f103";
+    $font-Flaticon-bin: "\f104";
+    $font-Flaticon-shelf2: "\f105";
+    $font-Flaticon-shelf1: "\f106";
+    $font-Flaticon-freezer: "\f107";
+    $font-Flaticon-fridge: "\f108";
+    $font-Flaticon-surface: "\f109";
+    $font-Flaticon-box: "\f10a";
+    $font-Flaticon-drawer: "\f10b";
+    $font-Flaticon-house: "\f10c";
+    $font-Flaticon-stairs: "\f10d";

@@ -11,6 +11,8 @@ namespace HoT.Core.Data.Domain
 
         public int? ParentId { get; set; }
 
+        public int LocationTypeId { get; set; }
+
         public string Sort { get; set; }
 
         public string Name { get; set; }
@@ -23,6 +25,9 @@ namespace HoT.Core.Data.Domain
 
         public ICollection<Tag> Tags { get; set; }
 
+        public LocationType LocationType { get; set; }
+
+
         internal static void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Location>()
@@ -32,6 +37,11 @@ namespace HoT.Core.Data.Domain
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Location>()
                 .HasIndex(l => new { l.ParentId, l.Sort });
+            modelBuilder.Entity<Location>()
+                .HasOne(l => l.LocationType)
+                .WithMany()
+                .HasForeignKey(l => l.LocationTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         public override string ToString()

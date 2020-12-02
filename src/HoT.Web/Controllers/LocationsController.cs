@@ -24,6 +24,13 @@ namespace HoT.Web.Controllers
             _dbContext = dbContext;
         }
 
+        [HttpGet]
+        [Route("locationtypes")]
+        public async Task<ActionResult<IEnumerable<LocationType>>> LocationTypes()
+        {
+            return await _dbContext.LocationTypes.OrderBy(lt => lt.Name).ToArrayAsync();
+        }
+
         [HttpPost]
         [Route("search")]
         public async Task<ActionResult<IEnumerable<LocationModel>>> Search([FromBody] LocationFilterModel locationFilter)
@@ -46,6 +53,7 @@ namespace HoT.Web.Controllers
                     Description = l.Description,
                     Moveable = l.Moveable,
                     Expanded = true,
+                    LocationType = l.LocationType.Name,
                     Children = new List<LocationModel>()
                 })
                 .ToListAsync();

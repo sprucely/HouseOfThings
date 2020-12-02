@@ -19,9 +19,15 @@ export type LocationModel = {
   id: number;
   parentId: number | null;
   moveable: boolean;
-  name?: React.ReactNode;
-  description?: React.ReactNode;
+  name?: string;
+  description?: string;
   expanded?: boolean;
+  locationType: string
   children: LocationModel[];
 }
 
+export type LocationTypeModel = {
+  id: number;
+  name: string;
+  iconClass: string;
+}

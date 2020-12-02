@@ -24,11 +24,13 @@ namespace HoT.Test
                     using (var scope = sp.CreateScope())
                     {
                         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var dbHelper = scope.ServiceProvider.GetRequiredService<IDbHelper>();
+
                         db.Database.EnsureDeleted();
                         db.Database.Migrate();
 
                         // init db here
-                        var dbinit = new DbInitializer(db);
+                        var dbinit = new DbInitializer(db, dbHelper);
 
                         dbinit.Initialize().GetAwaiter().GetResult();
 
