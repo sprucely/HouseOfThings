@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BloomFilter;
 
@@ -14,10 +15,16 @@ namespace HoT.Core.Utilities
             _bloomFilter = new Lazy<Filter<string>>(() =>
             {
                 var filter = FilterBuilder.Build<string>(10000000, 0.01);
-                filter.Add(StopWord.StopWords.GetStopWords("en"));
+                filter.Add(StopWord.StopWords.GetStopWords("en").Select(w => w.ToLower()));
                 return filter;
             });
         }
+
+        public static string GetPreviousMidstring(this string prev, string next)
+        {
+            return GetNextMidstring(next, prev);
+        }
+
 
         public static string GetNextMidstring(this string prev, string next)
         {
@@ -58,7 +65,7 @@ namespace HoT.Core.Utilities
 
         public static bool IsStopWord(this string word)
         {
-            return _bloomFilter.Value.Contains(word);
+            return _bloomFilter.Value.Contains(word.ToLower());
         }
 
         public static IEnumerable<string> RemoveStopWords(this IEnumerable<string> words)
@@ -66,7 +73,7 @@ namespace HoT.Core.Utilities
             var bloomFilter = _bloomFilter.Value;
             foreach (var word in words)
             {
-                if (!bloomFilter.Contains(word))
+                if (!bloomFilter.Contains(word.ToLower()))
                     yield return word;
             }
         }

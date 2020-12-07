@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button, Dimmer, Divider, Grid, Icon, List, ListDescription, ListHeader, Loader, Popup, Segment } from 'semantic-ui-react';
 import { createState, State, useState } from '@hookstate/core'
-import { LocationFilterModel, LocationModel, LocationTypeModel } from '../types';
-import { AddLocationModal } from './AddLocationModal';
-import Axios from 'axios';
+import { LocationFilterModel, LocationModel } from '../types';
+import { EditLocationModal } from './EditLocationModal';
+import { getLocationTypeIconClasses } from '../services/data';
+import { createLocation }from '../services/data';
 
 type LocationTreeProps = {
   locations: State<LocationModel[]>;
@@ -17,14 +18,7 @@ type LocationTreeItemProps = {
   locationFilter: State<LocationFilterModel>;
 }
 
-async function getLocationTypesAsync() {
-  const result = await Axios.get<LocationTypeModel[]>("/api/locations/locationtypes");
-  const mapLocationTypeToIconClass: Record<string, string> = {};
-  (result.data || []).map((lt) => mapLocationTypeToIconClass[lt.name] = lt.iconClass);
-  return mapLocationTypeToIconClass;
-}
-
-const iconClassesGlobal = createState(getLocationTypesAsync());
+const iconClassesGlobal = createState(getLocationTypeIconClasses());
 
 function LocationTreeItem(props: LocationTreeItemProps) {
   const { location: _location, rootIndex, locationFilter: _locationFilter } = props;
@@ -34,7 +28,22 @@ function LocationTreeItem(props: LocationTreeItemProps) {
   const children = useState(_location.children);
   const iconClasses = useState(iconClassesGlobal);
 
-  
+  async function handleAddLocationResult(editedLocation: LocationModel | null) {
+    if (editedLocation !== null) {
+      editedLocation.parentId = location.id.get();
+      // doing equivalent of [].push using hookState's merge
+      children.merge(c => {
+        const merge: { [index: number]: LocationModel } = {};
+        c.map((child: LocationModel,  i: number) => merge[i + 1] = child);
+        merge[0] = editedLocation;
+        return merge;
+      });
+      const createdLocation = await createLocation(editedLocation);
+      // replace editedLocation with createdLocation
+      children.merge({ 0: createdLocation });
+    }
+  }
+
   return (<List.Item>
     <List.Icon className={(!iconClasses.promised && !iconClasses.error && iconClasses.get()[location.locationType.get()]) || 'folder icon'} />
     <List.Content>
@@ -51,7 +60,7 @@ function LocationTreeItem(props: LocationTreeItemProps) {
           {location.parentId.get() !== null && rootIndex === 0
             && (<Popup content='Exit' trigger={(<Button icon={(<Icon flipped='horizontally' name='sign-out' />)}
               onClick={() => { locationIdFilter.set(location.parentId?.get() || undefined); }} />)} />)}
-          <Popup content='Add Storage' trigger={(<AddLocationModal />)} />
+          <EditLocationModal action='Add' onClose={handleAddLocationResult} />
           <Popup content='Add Thing' trigger={(<Button icon='add' onClick={() => { }} />)} />
         </Grid.Column>
       </Grid>

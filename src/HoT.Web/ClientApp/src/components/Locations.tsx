@@ -5,15 +5,12 @@ import { TagLookup } from './TagLookup';
 import { LocationFilterModel, LocationModel, TagModel } from '../types';
 import { Grid, List } from 'semantic-ui-react';
 import { LocationTree } from './LocationTree';
-import Axios from 'axios';
+import { searchLocations } from '../services/data';
+
 
 export const Locations = () => {
   const locationFilter = useState<LocationFilterModel>({ parentId: null });
 
-  const searchLocationsAsync = async () => {
-    const result = await Axios.post<LocationModel[]>("/api/locations/search", locationFilter.get());
-    return result.data || [];
-  }
 
   const locations = useState<LocationModel[]>([]);
 
@@ -23,7 +20,7 @@ export const Locations = () => {
 
 
   useEffect(() => {
-    locations.set(searchLocationsAsync);
+    locations.set(searchLocations(locationFilter));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationFilter]);
 

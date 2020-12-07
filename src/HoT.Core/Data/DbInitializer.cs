@@ -22,12 +22,12 @@ namespace HoT.Core.Data
             var locationTypeDefault = await _dbContext.CreateOrFindLocationType("Default", "flaticon-folder");
             var locationTypeHouse = await _dbContext.CreateOrFindLocationType("House", "flaticon-house");
             var locationTypeRoom = await _dbContext.CreateOrFindLocationType("Room", "flaticon-room");
-            var locationTypeCloset = await _dbContext.CreateOrFindLocationType("Closet", "flaticon--closet");
+            var locationTypeCloset = await _dbContext.CreateOrFindLocationType("Closet", "flaticon-closet");
             var locationTypeCabinet = await _dbContext.CreateOrFindLocationType("Cabinet", "flaticon-cabinet");
             var locationTypeShelf = await _dbContext.CreateOrFindLocationType("Shelf", "flaticon-shelf");
             var locationTypeDrawer = await _dbContext.CreateOrFindLocationType("Drawer", "flaticon-drawer");
-            var locationTypeBox = await _dbContext.CreateOrFindLocationType("Box", "vbox");
-            var locationTypeBin = await _dbContext.CreateOrFindLocationType("Bin", "folder big icon");
+            var locationTypeBox = await _dbContext.CreateOrFindLocationType("Box", "flaticon-box");
+            var locationTypeBin = await _dbContext.CreateOrFindLocationType("Bin", "flaticon-bin");
             var locationTypeFreezer = await _dbContext.CreateOrFindLocationType("Freezer", "flaticon-freezer");
             var locationTypeFridge = await _dbContext.CreateOrFindLocationType("Fridge", "flaticon-fridge");
             var locationTypeSurface = await _dbContext.CreateOrFindLocationType("Surface", "flaticon-surface");

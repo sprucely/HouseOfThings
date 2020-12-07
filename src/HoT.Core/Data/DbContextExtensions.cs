@@ -55,7 +55,8 @@ namespace HoT.Core.Data
             var allTagNames = name.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Concat(tagNames)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .RemoveStopWords();
+                .RemoveStopWords()
+                .Select(t => t.ToLower());
 
             if (allTagNames.Any())
             {
@@ -63,7 +64,7 @@ namespace HoT.Core.Data
                 tags.ForEach(location.Tags.Add);
             }
 
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
             return location;
         }

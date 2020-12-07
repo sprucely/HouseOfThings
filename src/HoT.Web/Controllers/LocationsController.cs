@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using HoT.Core.Data;
 using HoT.Core.Data.Models;
 using HoT.Core.Data.Domain;
+using HoT.Core.Utilities;
 
 namespace HoT.Web.Controllers
 {
@@ -31,6 +32,56 @@ namespace HoT.Web.Controllers
             return await _dbContext.LocationTypes.OrderBy(lt => lt.Name).ToArrayAsync();
         }
 
+        [HttpPost]
+        [Route("create")]
+        public async Task<ActionResult<LocationModel>> Create([FromBody] LocationModel locationModel)
+        {
+            var nextSiblingSort = (await _dbContext.Locations
+                .Where(l => l.ParentId == locationModel.ParentId)
+                .OrderBy(l => l.Sort)
+                .Select(l => l.Sort)
+                .FirstOrDefaultAsync())
+                ?? "";
+
+            var locationTypeId = await _dbContext.LocationTypes
+                .Where(l => l.Name == locationModel.LocationType)
+                .Select(l => l.Id)
+                .SingleAsync();
+
+
+            
+
+            var location = new Location
+            {
+                Name = locationModel.Name,
+                Description = locationModel.Description,
+                ParentId = locationModel.ParentId,
+                Tags = new List<Tag>(),
+                Sort = nextSiblingSort.GetPreviousMidstring(""),
+                LocationTypeId = locationTypeId
+            };
+
+            _dbContext.Locations.Add(location);
+
+            var allTagNames = locationModel.Name.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Concat(locationModel.Description.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .RemoveStopWords()
+                .Select(w => w.ToLower());
+
+            if (allTagNames.Any())
+            {
+                var tags = await _dbContext.CreateOrFindTags(allTagNames);
+                tags.ForEach(location.Tags.Add);
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            locationModel.Id = location.Id;
+
+            return locationModel;
+        }
+                
         [HttpPost]
         [Route("search")]
         public async Task<ActionResult<IEnumerable<LocationModel>>> Search([FromBody] LocationFilterModel locationFilter)
@@ -95,7 +146,6 @@ namespace HoT.Web.Controllers
             var childLocationIds = _dbContext.LocationsClosures
                 .Where(lc => lc.ParentId == locationId)
                 .Select(lc => lc.ChildId);
-
 
             return _dbContext.Locations
                 .Where(l => childLocationIds.Contains(l.Id));
