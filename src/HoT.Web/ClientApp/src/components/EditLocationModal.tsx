@@ -37,15 +37,24 @@ export function EditLocationModal(props: EditLocationProps) {
 
   const locationTypeOptions = (!locationTypes.promised && !locationTypes.error && locationTypes.keys.map(i => {
     const name = locationTypes[i].name.get();
-    return { 
-      key: name, 
-      value: name, 
-      text: name, 
+    return {
+      key: name,
+      value: name,
+      text: name,
       icon: { className: locationTypes[i].iconClass.get() }
-     }
+    }
   })) || [];
-  
+
   const open = useState(false);
+
+  // State<> objects don't seem to play nicely with useEffect, so get immediate state...
+  const isOpen = open.get();
+  useEffect(() => {
+    if (isOpen && !Boolean(originalLocation)) {
+      location.locationType.set(JSON.parse(JSON.stringify(defaultLocation.locationType.get())));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   function closeModal(acceptEdits: boolean) {
     const result = (acceptEdits && JSON.parse(JSON.stringify(location.get()))) || null;
