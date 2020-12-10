@@ -8,6 +8,12 @@ namespace HoT.Core.Data.Models
 
         public int? ParentId { get; set; }
 
+        public int RootId { get; set; }
+
+        public int Depth { get; set; }
+
+        public string Path { get; set; }
+
         public string Name { get; set; }
 
         public string Description { get; set; }
@@ -17,7 +23,5 @@ namespace HoT.Core.Data.Models
         public bool Moveable { get; set; }
 
         public string LocationType { get; set; }
-
-        public List<LocationModel> Children { get; set; }
     }
 }

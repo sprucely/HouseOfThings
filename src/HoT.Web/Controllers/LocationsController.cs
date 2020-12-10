@@ -105,26 +105,25 @@ namespace HoT.Web.Controllers
                     Moveable = l.Moveable,
                     Expanded = true,
                     LocationType = l.LocationType.Name,
-                    Children = new List<LocationModel>()
                 })
                 .ToListAsync();
 
+            // get depth and path from effective root locations
+            // TODO: try to incorporate this logic into above query
             var modelsById = models.ToDictionary(m => m.Id);
-            var results = new List<LocationModel>();
-
-            models.ForEach(m =>
+            var rootModelIds = models
+                .Where(m => m.ParentId == null || !modelsById.ContainsKey(m.ParentId.Value))
+                .Select(m => m.Id);
+            foreach (var closure in _dbContext.LocationsClosures
+                .Where(c => rootModelIds.Contains(c.ParentId) && modelsById.Keys.Contains(c.ChildId)))
             {
-                if (m.ParentId != null && modelsById.TryGetValue(m.ParentId.Value, out var parent))
-                {
-                    parent.Children.Add(m);
-                }
-                else
-                {
-                    results.Add(m);
-                }
-            });
+                var model = modelsById[closure.ChildId];
+                model.RootId = closure.ParentId;
+                model.Depth = closure.Depth;
+                model.Path = closure.Path;
+            }
 
-            return results;
+            return models.OrderBy(m => m.Path).ToArray();
         }
 
         private IQueryable<Location> GetLocationsByParentId(int? parentId)

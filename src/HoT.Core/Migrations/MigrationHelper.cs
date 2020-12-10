@@ -32,11 +32,11 @@ namespace HoT.Core.Migrations
                 CREATE TRIGGER Locations_closures_after_insert
                 AFTER INSERT ON Locations
                 BEGIN
-                    INSERT INTO LocationsClosures(ParentId, ChildId, Depth)
-                    VALUES (new.Id, new.Id, 0);
+                    INSERT INTO LocationsClosures(ParentId, ChildId, Depth, Path)
+                    VALUES (new.Id, new.Id, 0, new.Id);
 
-                    INSERT INTO LocationsClosures(ParentId, ChildId, Depth)
-                    SELECT p.ParentId, c.ChildId, p.Depth + c.Depth + 1
+                    INSERT INTO LocationsClosures(ParentId, ChildId, Depth, Path)
+                    SELECT p.ParentId, c.ChildId, p.Depth + c.Depth + 1, p.Path || '.' || c.ChildId
                     FROM LocationsClosures p, LocationsClosures c
                     WHERE 
                         new.ParentId IS NOT NULL --nothing to add if no parent exists

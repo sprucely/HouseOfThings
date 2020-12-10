@@ -1,8 +1,8 @@
 import { createState, State, useState } from '@hookstate/core';
 import React, { useEffect } from 'react'
-import { Button, Form, Header, Input, Modal, Popup, Select } from 'semantic-ui-react'
-import { LocationModel, LocationTypeModel } from '../types'
-import { fetchLocationTypes, createLocation } from '../services/data';
+import { Button, Form, Input, Modal, Popup, Select } from 'semantic-ui-react'
+import { LocationModel } from '../types'
+import { fetchLocationTypes } from '../services/data';
 
 type EditLocationProps = {
   action: "Add" | "Edit";
@@ -16,12 +16,13 @@ type Event = React.ChangeEvent<HTMLInputElement>;
 const defaultLocationGlobal = createState<LocationModel>({
   id: 0,
   parentId: 0,
+  rootId: 0,
+  depth: 0,
   moveable: true,
   name: undefined,
   description: undefined,
   expanded: true,
   locationType: "House",
-  children: []
 })
 
 

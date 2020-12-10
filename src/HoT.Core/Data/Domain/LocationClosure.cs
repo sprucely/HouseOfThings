@@ -13,6 +13,8 @@ namespace HoT.Core.Data.Domain
 
         public int Depth { get; set; }
 
+        public string Path { get; set; }
+
         public Location Parent { get; set; }
 
         public Location Child { get; set; }
@@ -24,6 +26,9 @@ namespace HoT.Core.Data.Domain
             modelBuilder.Entity<LocationClosure>()
                 .HasIndex(lc => new { lc.ChildId, lc.ParentId, lc.Depth })
                 .IsUnique();
+            //TODO: Determine if Path index can/should be combined with above (child, parent, depth)
+            modelBuilder.Entity<LocationClosure>()
+                .HasIndex(lc => lc.Path);
             modelBuilder.Entity<LocationClosure>()
                 .HasOne(lc => lc.Parent)
                 .WithMany()

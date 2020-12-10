@@ -18,12 +18,13 @@ export type LocationFilterModel = {
 export type LocationModel = {
   id: number;
   parentId: number | null;
+  rootId: number;
+  depth: number;
   moveable: boolean;
   name?: string;
   description?: string;
   expanded?: boolean;
   locationType: string
-  children: LocationModel[];
 }
 
 export type LocationTypeModel = {
