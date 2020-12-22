@@ -1,10 +1,8 @@
 import Axios from 'axios';
-import { State } from '@hookstate/core'
-
 import { LocationFilterModel, LocationModel, LocationTypeModel } from '../types';
 
-export async function searchLocations(locationFilter: State<LocationFilterModel>) {
-  const result = await Axios.post<LocationModel[]>("/api/locations/search", locationFilter.get());
+export async function searchLocations(locationFilter: LocationFilterModel) {
+  const result = await Axios.post<LocationModel[]>("/api/locations/search", locationFilter);
   return result.data || [];
 }
 
@@ -22,5 +20,10 @@ export async function getLocationTypeIconClasses() {
 
 export async function createLocation(creatingLocation: LocationModel) {
   const result = await Axios.post<LocationModel>("/api/locations/create", creatingLocation);
+  return result.data;
+}
+
+export async function updateLocation(updatingLocation: LocationModel) {
+  const result = await Axios.post<LocationModel>("/api/locations/update", updatingLocation);
   return result.data;
 }

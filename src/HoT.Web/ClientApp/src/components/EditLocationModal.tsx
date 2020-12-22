@@ -1,14 +1,16 @@
 import { createState, State, useState } from '@hookstate/core';
-import React, { useEffect } from 'react'
-import { Button, Form, Input, Modal, Popup, Select } from 'semantic-ui-react'
-import { LocationModel } from '../types'
+import React from 'react'
+import { Button, Form, Input, Modal, Select } from 'semantic-ui-react'
+import { LocationModel, LocationTypeModel } from '../types'
 import { fetchLocationTypes } from '../services/data';
+import { clone } from '../utilities/state';
 
 type EditLocationProps = {
   action: "Add" | "Edit";
-  location?: State<LocationModel>;
+  onOpen?: () => State<LocationModel> | null;
   // editedLocation will be null when modal is cancelled
   onClose: (editedLocation: LocationModel | null) => void;
+  trigger: React.ReactNode
 }
 
 type Event = React.ChangeEvent<HTMLInputElement>;
@@ -23,18 +25,17 @@ const defaultLocationGlobal = createState<LocationModel>({
   description: undefined,
   expanded: true,
   locationType: "House",
+  isActive: false,
+  isDefault: true
 })
 
-
 export function EditLocationModal(props: EditLocationProps) {
-  const { location: originalLocation, onClose, action } = props;
+  const { onOpen, onClose, action, trigger } = props;
 
-  const defaultLocation = useState(defaultLocationGlobal);
+  const location = useState(clone(defaultLocationGlobal.value));
+  const defaultLocationType = useState(defaultLocationGlobal.locationType);
 
-  // clone location for local editing without affecting state that was passed in
-  const location = useState(JSON.parse(JSON.stringify(originalLocation?.get() || defaultLocation.get())) as LocationModel);
-
-  const locationTypes = useState(fetchLocationTypes());
+  const locationTypes = useState<LocationTypeModel[]>([]);
 
   const locationTypeOptions = (!locationTypes.promised && !locationTypes.error && locationTypes.keys.map(i => {
     const name = locationTypes[i].name.get();
@@ -48,29 +49,37 @@ export function EditLocationModal(props: EditLocationProps) {
 
   const open = useState(false);
 
-  // State<> objects don't seem to play nicely with useEffect, so get immediate state...
-  const isOpen = open.get();
-  useEffect(() => {
-    if (isOpen && !Boolean(originalLocation)) {
-      location.locationType.set(JSON.parse(JSON.stringify(defaultLocation.locationType.get())));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen])
-
   function closeModal(acceptEdits: boolean) {
-    const result = (acceptEdits && JSON.parse(JSON.stringify(location.get()))) || null;
+    const resultState = acceptEdits ? clone(location.value) : null
+
     open.set(false);
-    location.set(JSON.parse(JSON.stringify(originalLocation?.get() || defaultLocation.get())));
-    onClose(result);
+    onClose(resultState);
+  }
+
+  function openModal() {
+    if (!locationTypes.promised && !locationTypes.error && locationTypes.length === 0) {
+      locationTypes.set(fetchLocationTypes());
+    }
+
+    if (action === "Add") {
+      location.merge(clone(defaultLocationGlobal.value))
+    } else {
+      const openingLocation = (onOpen && onOpen()) || null;
+      if (openingLocation) {
+        location.merge(clone(openingLocation.value))
+      }
+    }
+
+    open.set(true);
   }
 
   return (
     <Modal
       size='small'
       onClose={() => closeModal(false)}
-      onOpen={() => open.set(true)}
+      onOpen={() => openModal()}
       open={open.get()}
-      trigger={<Popup content='Add Storage' trigger={<Button icon='add square' onClick={() => open.set(true)} />} />}
+      trigger={trigger}
     >
       <Modal.Header>{action} Location</Modal.Header>
       <Modal.Content>
@@ -91,7 +100,7 @@ export function EditLocationModal(props: EditLocationProps) {
                 value={location.locationType.get()}
                 onChange={(_: any, { value }: { value: string }) => {
                   location.locationType.set(value);
-                  defaultLocation.locationType.set(value);
+                  defaultLocationType.set(value);
                 }}
                 options={locationTypeOptions}
               />

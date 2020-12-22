@@ -10,9 +10,9 @@ export type TagFilterModel = {
 };
 
 export type LocationFilterModel = {
-  tagFilter?: TagFilterModel;
-  locationId?: number; 
-  parentId?: number | null;
+  tagFilter: TagFilterModel;
+  locationId: number | null; 
+  //parentId: number | null;
 };
 
 export type LocationModel = {
@@ -25,6 +25,8 @@ export type LocationModel = {
   description?: string;
   expanded?: boolean;
   locationType: string
+  isActive: boolean,
+  isDefault: boolean;
 }
 
 export type LocationTypeModel = {

@@ -6,6 +6,7 @@ import './TagStyles.css';
 import { TagModel } from '../types';
 import Axios from 'axios';
 import { none, useState } from '@hookstate/core';
+import { clone } from '../utilities/state';
 
 
 type TagLookupProps = {
@@ -32,7 +33,7 @@ export const TagLookup = (props : TagLookupProps) => {
   }
 
   function handleAddition(tag: Tag) {
-    const tagClone = JSON.parse(JSON.stringify(tag)) as Tag;
+    const tagClone = clone(tag) as Tag;
     tags.merge([tagClone]);
     onTagsChanged(tags.get());
   }

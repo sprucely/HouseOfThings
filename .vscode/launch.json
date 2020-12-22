@@ -53,6 +53,7 @@
             "profile": "dev",
             "firefoxArgs": [
                 "-devtools",
-            ]        }
+            ] 
+        }
     ]
 }

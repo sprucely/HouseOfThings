@@ -63,11 +63,7 @@ namespace HoT.Web.Controllers
 
             _dbContext.Locations.Add(location);
 
-            var allTagNames = locationModel.Name.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Concat(locationModel.Description.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .RemoveStopWords()
-                .Select(w => w.ToLower());
+            var allTagNames = locationModel.GetTagNames();
 
             if (allTagNames.Any())
             {
@@ -82,6 +78,41 @@ namespace HoT.Web.Controllers
             return locationModel;
         }
                 
+        [HttpPost]
+        [Route("update")]
+        public async Task<ActionResult<LocationModel>> Update([FromBody] LocationModel locationModel)
+        {
+            var locationType = await _dbContext.LocationTypes.FirstOrDefaultAsync(lt => lt.Name == locationModel.LocationType);
+
+            var location = await _dbContext.Locations
+                .Where(l => l.Id == locationModel.Id)
+                .Include(l => l.Tags)
+                .SingleAsync();
+
+            location.Name = locationModel.Name;
+            location.Description = locationModel.Description;
+
+            // reconcile current and wanted tags....
+            var allTagNames = locationModel.GetTagNames();
+
+            var wantedTags = (await _dbContext.CreateOrFindTags(allTagNames)).ToHashSet();
+            var currentTags = location.Tags.ToHashSet();
+
+            foreach(var removeTag in currentTags.Except(wantedTags))
+            {
+                location.Tags.Remove(removeTag);
+            }
+
+            foreach(var addTag in wantedTags.Except(currentTags))
+            {
+                location.Tags.Add(addTag);
+            }
+            
+            await _dbContext.SaveChangesAsync();
+
+            return locationModel;
+        }
+
         [HttpPost]
         [Route("search")]
         public async Task<ActionResult<IEnumerable<LocationModel>>> Search([FromBody] LocationFilterModel locationFilter)
