@@ -176,8 +176,6 @@ namespace HoT.Core.Migrations
                 name: "IX_Photo_ItemId",
                 table: "Photo",
                 column: "ItemId");
-
-            MigrationHelper.CreateLocationTriggers(migrationBuilder);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

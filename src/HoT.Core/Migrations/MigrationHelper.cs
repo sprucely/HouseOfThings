@@ -9,7 +9,7 @@ namespace HoT.Core.Migrations
             migrationBuilder.Sql(@"
                 CREATE TRIGGER Locations_closures_after_update
                 AFTER UPDATE ON Locations
-                WHEN ifnull(old.ParentId, 0) <> ifnull(new.ParentId, 0)
+                WHEN ifnull(old.ParentId, 0) <> ifnull(new.ParentId, 0) OR old.Sort <> new.Sort
                 BEGIN
                     DELETE FROM LocationsClosures
                     WHERE ROWID in (
@@ -20,9 +20,10 @@ namespace HoT.Core.Migrations
                         AND p.ParentId = link.ParentId AND c.ChildId = link.ChildId
                         AND p.ChildId=old.ParentId AND c.ParentId=old.Id);
 
-                    INSERT INTO LocationsClosures(ParentId, ChildId, Depth)
-                    SELECT p.ParentId, c.ChildId, p.Depth + c.Depth + 1
+                    INSERT INTO LocationsClosures(ParentId, ChildId, Depth, Path)
+                    SELECT p.ParentId, c.ChildId, p.Depth + c.Depth + 1, p.Path || '.' || l.Sort
                     FROM LocationsClosures p, LocationsClosures c
+                    JOIN Locations l on l.id = c.ChildId
                     WHERE 
                         new.ParentId IS NOT NULL --nothing to add if no parent exists
                         AND p.ChildId=new.ParentId AND c.ParentId=new.Id;
@@ -33,11 +34,12 @@ namespace HoT.Core.Migrations
                 AFTER INSERT ON Locations
                 BEGIN
                     INSERT INTO LocationsClosures(ParentId, ChildId, Depth, Path)
-                    VALUES (new.Id, new.Id, 0, new.Id);
+                    VALUES (new.Id, new.Id, 0, new.Sort);
 
                     INSERT INTO LocationsClosures(ParentId, ChildId, Depth, Path)
-                    SELECT p.ParentId, c.ChildId, p.Depth + c.Depth + 1, p.Path || '.' || c.ChildId
+                    SELECT p.ParentId, c.ChildId, p.Depth + c.Depth + 1, p.Path || '.' || l.Sort
                     FROM LocationsClosures p, LocationsClosures c
+                    JOIN Locations l on l.id = c.ChildId
                     WHERE 
                         new.ParentId IS NOT NULL --nothing to add if no parent exists
                         AND p.ChildId=new.ParentId AND c.ParentId=new.Id;
