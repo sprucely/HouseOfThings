@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
 import { State, useState } from '@hookstate/core';
-import { Untracked } from '@hookstate/untracked';
 import { Grid, List, Menu } from 'semantic-ui-react';
 
 import { TagLookup } from './TagLookup';
@@ -14,35 +13,58 @@ let locationsPromise: Promise<LocationModel[]> | null = null;
 
 export const Locations = () => {
   const locations = useState<LocationModel[]>([]);
-  //locations.attach(Untracked);
+  const hasActiveLocation = useState(false);
 
   useEffect(() => {
     requestSearchLocations({ locationId: null, tagFilter: { tags: [], includeAllTags: false } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleActivateLocation = useCallback((activatedLocation: State<LocationModel>) => {
+
+    const activeLocationId = activatedLocation.id.get();
+
+    const locationToDeactivate = !locations.promised && !locations.error
+      && locations.find(l => l.isActive.get() && l.id.get() !== activeLocationId);
+
+    if (locationToDeactivate) {
+      locationToDeactivate.isActive.set(false)
+    }
+
+    activatedLocation.isActive.set(true);
+    hasActiveLocation.set(true);
+  }, [hasActiveLocation, locations]);
+
+  const activateFirstLocation = useCallback(() =>{
+    const firstLocation = !locations.promised && !locations.error && locations.length && locations[0];
+    if (firstLocation) {
+      handleActivateLocation(firstLocation);
+    }
+  },[handleActivateLocation, locations]);
+
   const requestSearchLocations = useCallback((filter: LocationFilterModel) => {
     if (locationsPromise === null) {
       locationsPromise = searchLocations(filter);
       locations.set(locationsPromise);
+      locationsPromise.then(() => activateFirstLocation());
     } else {
       // must be sure previous promise has resolved before calling set()...
       locationsPromise.then(() => {
         locationsPromise = searchLocations(filter)
         locations.set(locationsPromise);
+        locationsPromise.then(() => activateFirstLocation());
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    hasActiveLocation.set(false);
+  }, [activateFirstLocation, hasActiveLocation, locations]);
 
-  const handleTagsChanged = (newTags: TagModel[]) => {
+  const handleTagsChanged = useCallback((newTags: TagModel[]) => {
     requestSearchLocations({ locationId: null, tagFilter: { tags: newTags, includeAllTags: false } });
-  };
+  }, [requestSearchLocations]);
 
   const getActiveLocation = useCallback(() => {
     return (!locations.promised && !locations.error && locations.find(l => l.isActive.get())) || null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [locations]);
 
   const handleAddLocationResult = useCallback(async (addedLocation: LocationModel | null) => {
     const activeLocation = getActiveLocation();
@@ -75,8 +97,7 @@ export const Locations = () => {
       // replace editedLocation with createdLocation
       locations[(parentIndex || -1) + 1].merge(createdLocation);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getActiveLocation]);
+  }, [getActiveLocation, locations]);
 
   const handleEditLocationResult = useCallback(async (editedLocation: LocationModel | null) => {
     if (editedLocation) {
@@ -98,21 +119,6 @@ export const Locations = () => {
     }
   }, [getActiveLocation]);
 
-  const handleActivateLocation = useCallback((activatedLocation: State<LocationModel>) => {
-
-    const activeLocationId = activatedLocation.id.get();
-
-    const locationToDeactivate = !locations.promised && !locations.error
-      && locations.find(l => l.isActive.get() && l.id.get() !== activeLocationId);
-
-    if (locationToDeactivate) {
-      locationToDeactivate.isActive.set(false)
-    }
-
-    activatedLocation.isActive.set(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleEnterLocation = useCallback((location: State<LocationModel>) => {
     requestSearchLocations({ locationId: location.id.get(), tagFilter: { tags: [], includeAllTags: false } });
   }, [requestSearchLocations]);
@@ -132,14 +138,14 @@ export const Locations = () => {
                 action='Add'
                 onClose={handleAddLocationResult}
                 trigger={
-                  <Menu.Item icon="add square" name='Add Location' position='right' />} />
+                  <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} />} />
               <EditLocationModal
                 action='Edit'
                 onOpen={() => getActiveLocation()}
                 onClose={handleEditLocationResult}
                 trigger={
-                  <Menu.Item icon="edit" name='Edit Location' />} />
-              <Menu.Item icon="add" name='Add Thing' onClick={() => { }} />
+                  <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} />} />
+              <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
 
 
             </Menu>
