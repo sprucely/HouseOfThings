@@ -9,13 +9,17 @@ import 'semantic-ui-css/semantic.min.css';
 import './App.css';
 
 import './css/fonts/flaticon/flaticon.css';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 function App() {
   return (
-    <Layout>
-      <Route exact path='/' component={Locations} />
-      <Route path='/things' component={Things} />
-    </Layout>
+    <DndProvider backend={HTML5Backend}>
+      <Layout>
+        <Route exact path='/' component={Locations} />
+        <Route path='/things' component={Things} />
+      </Layout>
+    </DndProvider>
   );
 }
 

@@ -20,6 +20,7 @@ const defaultLocationGlobal = createState<LocationModel>({
   parentId: 0,
   rootId: 0,
   depth: 0,
+  path: "",
   moveable: true,
   name: undefined,
   description: undefined,

@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect } from 'react';
 import { State, useState } from '@hookstate/core';
-import { Grid, List, Menu } from 'semantic-ui-react';
+import { Grid, List, Menu, Ref } from 'semantic-ui-react';
 
 import { TagLookup } from './TagLookup';
-import { LocationFilterModel, LocationModel, TagModel } from '../types';
+import { DragDataItem, DragItemTypes, DropData, LocationFilterModel, LocationModel, TagModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { createLocation, searchLocations, updateLocation } from '../services/data';
 import { EditLocationModal } from './EditLocationModal';
 import { clone } from '../utilities/state';
+import { useDrop } from 'react-dnd';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
 
@@ -35,12 +36,12 @@ export const Locations = () => {
     hasActiveLocation.set(true);
   }, [hasActiveLocation, locations]);
 
-  const activateFirstLocation = useCallback(() =>{
+  const activateFirstLocation = useCallback(() => {
     const firstLocation = !locations.promised && !locations.error && locations.length && locations[0];
     if (firstLocation) {
       handleActivateLocation(firstLocation);
     }
-  },[handleActivateLocation, locations]);
+  }, [handleActivateLocation, locations]);
 
   const requestSearchLocations = useCallback((filter: LocationFilterModel) => {
     if (locationsPromise === null) {
@@ -127,65 +128,100 @@ export const Locations = () => {
     requestSearchLocations({ locationId: location.parentId.get(), tagFilter: { tags: [], includeAllTags: false } });
   }, [requestSearchLocations]);
 
+  const handleCanDropItem = useCallback((data: DropData) => {
+    const isOverSelfOrNestedLocation = data.dropTarget.nested("path").get().startsWith(data.dragItem.nested("path").get());
+    return !isOverSelfOrNestedLocation;
+  }, [])
+
+  const handleDropItem = useCallback((data: DropData) => {
+    const isOverSelfOrNestedLocation = data.dropTarget.nested("path").get().startsWith(data.dragItem.nested("path").get());
+    if (!isOverSelfOrNestedLocation) {
+
+    }
+  }, [])
+
+  const [{ draggingLocation }, dropLocation] = useDrop({
+    accept: DragItemTypes.LOCATION,
+    drop: () => {},
+    canDrop: () => false,
+    collect: (monitor) => {
+      if (!!monitor.isOver()) {
+        const { dragData: { dragItemType, dragItem } } = monitor.getItem() as DragDataItem;
+        return {
+          draggingLocation: dragItemType === 'location' ? dragItem as State<LocationModel> : null
+        };
+      }
+      return {
+        draggingLocation: null
+      }
+    }
+  })
+
+
   return (
-    <div>
-      <Grid columns={2} divided stackable>
-        <Grid.Row>
-          <Grid.Column>
-            <TagLookup onTagsChanged={handleTagsChanged} />
-            <Menu icon='labeled'>
-              <EditLocationModal
-                action='Add'
-                onClose={handleAddLocationResult}
-                trigger={
-                  <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} />} />
-              <EditLocationModal
-                action='Edit'
-                onOpen={() => getActiveLocation()}
-                onClose={handleEditLocationResult}
-                trigger={
-                  <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} />} />
-              <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
+      <Ref innerRef={dropLocation}>
+        <div>
+          <Grid columns={2} divided stackable>
+            <Grid.Row>
+              <Grid.Column>
+                <TagLookup onTagsChanged={handleTagsChanged} />
+                <Menu icon='labeled'>
+                  <EditLocationModal
+                    action='Add'
+                    onClose={handleAddLocationResult}
+                    trigger={
+                      <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} />} />
+                  <EditLocationModal
+                    action='Edit'
+                    onOpen={() => getActiveLocation()}
+                    onClose={handleEditLocationResult}
+                    trigger={
+                      <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} />} />
+                  <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
 
 
-            </Menu>
-            <LocationTree
-              locations={locations}
-              onActivateLocation={handleActivateLocation}
-              onEnterLocation={handleEnterLocation}
-              onExitLocation={handleExitLocation}
-            />
-          </Grid.Column>
-          <Grid.Column>
-            <List divided relaxed>
-              <List.Item>
-                <List.Icon name='github' size='large' verticalAlign='middle' />
-                <List.Content>
-                  <List.Header as='a'>Semantic-Org/Semantic-UI</List.Header>
-                  <List.Description as='a'>Updated 10 mins ago</List.Description>
-                </List.Content>
-              </List.Item>
-              <List.Item>
-                <List.Icon name='github' size='large' verticalAlign='middle' />
-                <List.Content>
-                  <List.Header as='a'>Semantic-Org/Semantic-UI-Docs</List.Header>
-                  <List.Description as='a'>Updated 22 mins ago</List.Description>
-                </List.Content>
-              </List.Item>
-              <List.Item>
-                <List.Icon name='github' size='large' verticalAlign='middle' />
-                <List.Content>
-                  <List.Header as='a'>Semantic-Org/Semantic-UI-Meteor</List.Header>
-                  <List.Description as='a'>Updated 34 mins ago</List.Description>
-                </List.Content>
-              </List.Item>
-            </List>
-          </Grid.Column>
-        </Grid.Row>
-      </Grid>
-      <div>
-        Icons generated by <a href="https://www.flaticon.com">flaticon.com</a>. <p>Under <a href="http://creativecommons.org/licenses/by/3.0/">CC</a>: <a data-file="014-stairs" href="http://www.freepik.com">Freepik</a>, <a data-file="005-bin" href="https://www.flaticon.com/authors/smashicons">Smashicons</a>, <a data-file="011-box" href="https://www.flaticon.com/authors/pixel-perfect">Pixel perfect</a></p>
-      </div>
-    </div>
+                </Menu>
+                <LocationTree
+                  locations={locations}
+                  draggingLocation={draggingLocation}
+                  onActivateLocation={handleActivateLocation}
+                  onEnterLocation={handleEnterLocation}
+                  onExitLocation={handleExitLocation}
+                  onCanDropItem={handleCanDropItem}
+                  onDropItem={handleDropItem}
+                />
+              </Grid.Column>
+              <Grid.Column>
+                <List divided relaxed>
+                  <List.Item>
+                    <List.Icon name='github' size='large' verticalAlign='middle' />
+                    <List.Content>
+                      <List.Header as='a'>Semantic-Org/Semantic-UI</List.Header>
+                      <List.Description as='a'>Updated 10 mins ago</List.Description>
+                    </List.Content>
+                  </List.Item>
+                  <List.Item>
+                    <List.Icon name='github' size='large' verticalAlign='middle' />
+                    <List.Content>
+                      <List.Header as='a'>Semantic-Org/Semantic-UI-Docs</List.Header>
+                      <List.Description as='a'>Updated 22 mins ago</List.Description>
+                    </List.Content>
+                  </List.Item>
+                  <List.Item>
+                    <List.Icon name='github' size='large' verticalAlign='middle' />
+                    <List.Content>
+                      <List.Header as='a'>Semantic-Org/Semantic-UI-Meteor</List.Header>
+                      <List.Description as='a'>Updated 34 mins ago</List.Description>
+                    </List.Content>
+                  </List.Item>
+                </List>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+          <div>
+            Icons generated by <a href="https://www.flaticon.com">flaticon.com</a>. <p>Under <a href="http://creativecommons.org/licenses/by/3.0/">CC</a>: <a data-file="014-stairs" href="http://www.freepik.com">Freepik</a>, <a data-file="005-bin" href="https://www.flaticon.com/authors/smashicons">Smashicons</a>, <a data-file="011-box" href="https://www.flaticon.com/authors/pixel-perfect">Pixel perfect</a></p>
+          </div>
+        </div>
+      </Ref>
   );
 }

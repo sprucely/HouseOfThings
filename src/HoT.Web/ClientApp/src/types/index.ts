@@ -1,3 +1,4 @@
+import { State } from "@hookstate/core";
 
 export type TagModel = {
   id: number,
@@ -20,6 +21,7 @@ export type LocationModel = {
   parentId: number | null;
   rootId: number;
   depth: number;
+  path: string;
   moveable: boolean;
   name?: string;
   description?: string;
@@ -33,4 +35,24 @@ export type LocationTypeModel = {
   id: number;
   name: string;
   iconClass: string;
+}
+
+export const DragItemTypes = {
+  LOCATION: 'location',
+  ITEM: 'item'
+}
+
+export type DragData = {
+  dragItemType: 'location' | 'item';
+  dragItem: State<LocationModel>;
+}
+
+export type DragDataItem = {
+  type: 'location' | 'item';
+  dragData: DragData
+}
+
+export type DropData = DragData & {
+  dropTarget: State<LocationModel>;
+  targetPlacement: 'child' | 'sibling';
 }
