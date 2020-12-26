@@ -58,7 +58,7 @@ function LocationTreeItem(props: LocationTreeItemProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, onEnterLocation]);
 
-  const [{ isDragging }, drag] = useDrag({
+  const [, drag] = useDrag({
     item: {
       type: DragItemTypes.LOCATION,
       dragData: {

@@ -9,12 +9,15 @@ import { createLocation, searchLocations, updateLocation } from '../services/dat
 import { EditLocationModal } from './EditLocationModal';
 import { clone } from '../utilities/state';
 import { useDrop } from 'react-dnd';
+import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
 
 export const Locations = () => {
   const locations = useState<LocationModel[]>([]);
   const hasActiveLocation = useState(false);
+
+  const { getConfirmation } = useConfirmationDialog();
 
   useEffect(() => {
     requestSearchLocations({ locationId: null, tagFilter: { tags: [], includeAllTags: false } });
@@ -133,16 +136,21 @@ export const Locations = () => {
     return !isOverSelfOrNestedLocation;
   }, [])
 
-  const handleDropItem = useCallback((data: DropData) => {
+  const handleDropItem = useCallback(async (data: DropData) => {
     const isOverSelfOrNestedLocation = data.dropTarget.nested("path").get().startsWith(data.dragItem.nested("path").get());
     if (!isOverSelfOrNestedLocation) {
-
+      if (await getConfirmation("Really?", "Are you certain?")) {
+        console.log("yay");
+      }
+      else {
+        console.log("boo")
+      }
     }
-  }, [])
+  }, [getConfirmation])
 
   const [{ draggingLocation }, dropLocation] = useDrop({
     accept: DragItemTypes.LOCATION,
-    drop: () => {},
+    drop: () => { },
     canDrop: () => false,
     collect: (monitor) => {
       if (!!monitor.isOver()) {
@@ -159,69 +167,70 @@ export const Locations = () => {
 
 
   return (
-      <Ref innerRef={dropLocation}>
+    <Ref innerRef={dropLocation}>
+      <div>
+        <ConfirmationDialog />
+        <Grid columns={2} divided stackable>
+          <Grid.Row>
+            <Grid.Column>
+              <TagLookup onTagsChanged={handleTagsChanged} />
+              <Menu icon='labeled'>
+                <EditLocationModal
+                  action='Add'
+                  onClose={handleAddLocationResult}
+                  trigger={
+                    <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} />} />
+                <EditLocationModal
+                  action='Edit'
+                  onOpen={() => getActiveLocation()}
+                  onClose={handleEditLocationResult}
+                  trigger={
+                    <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} />} />
+                <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
+
+
+              </Menu>
+              <LocationTree
+                locations={locations}
+                draggingLocation={draggingLocation}
+                onActivateLocation={handleActivateLocation}
+                onEnterLocation={handleEnterLocation}
+                onExitLocation={handleExitLocation}
+                onCanDropItem={handleCanDropItem}
+                onDropItem={handleDropItem}
+              />
+            </Grid.Column>
+            <Grid.Column>
+              <List divided relaxed>
+                <List.Item>
+                  <List.Icon name='github' size='large' verticalAlign='middle' />
+                  <List.Content>
+                    <List.Header as='a'>Semantic-Org/Semantic-UI</List.Header>
+                    <List.Description as='a'>Updated 10 mins ago</List.Description>
+                  </List.Content>
+                </List.Item>
+                <List.Item>
+                  <List.Icon name='github' size='large' verticalAlign='middle' />
+                  <List.Content>
+                    <List.Header as='a'>Semantic-Org/Semantic-UI-Docs</List.Header>
+                    <List.Description as='a'>Updated 22 mins ago</List.Description>
+                  </List.Content>
+                </List.Item>
+                <List.Item>
+                  <List.Icon name='github' size='large' verticalAlign='middle' />
+                  <List.Content>
+                    <List.Header as='a'>Semantic-Org/Semantic-UI-Meteor</List.Header>
+                    <List.Description as='a'>Updated 34 mins ago</List.Description>
+                  </List.Content>
+                </List.Item>
+              </List>
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
         <div>
-          <Grid columns={2} divided stackable>
-            <Grid.Row>
-              <Grid.Column>
-                <TagLookup onTagsChanged={handleTagsChanged} />
-                <Menu icon='labeled'>
-                  <EditLocationModal
-                    action='Add'
-                    onClose={handleAddLocationResult}
-                    trigger={
-                      <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} />} />
-                  <EditLocationModal
-                    action='Edit'
-                    onOpen={() => getActiveLocation()}
-                    onClose={handleEditLocationResult}
-                    trigger={
-                      <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} />} />
-                  <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
-
-
-                </Menu>
-                <LocationTree
-                  locations={locations}
-                  draggingLocation={draggingLocation}
-                  onActivateLocation={handleActivateLocation}
-                  onEnterLocation={handleEnterLocation}
-                  onExitLocation={handleExitLocation}
-                  onCanDropItem={handleCanDropItem}
-                  onDropItem={handleDropItem}
-                />
-              </Grid.Column>
-              <Grid.Column>
-                <List divided relaxed>
-                  <List.Item>
-                    <List.Icon name='github' size='large' verticalAlign='middle' />
-                    <List.Content>
-                      <List.Header as='a'>Semantic-Org/Semantic-UI</List.Header>
-                      <List.Description as='a'>Updated 10 mins ago</List.Description>
-                    </List.Content>
-                  </List.Item>
-                  <List.Item>
-                    <List.Icon name='github' size='large' verticalAlign='middle' />
-                    <List.Content>
-                      <List.Header as='a'>Semantic-Org/Semantic-UI-Docs</List.Header>
-                      <List.Description as='a'>Updated 22 mins ago</List.Description>
-                    </List.Content>
-                  </List.Item>
-                  <List.Item>
-                    <List.Icon name='github' size='large' verticalAlign='middle' />
-                    <List.Content>
-                      <List.Header as='a'>Semantic-Org/Semantic-UI-Meteor</List.Header>
-                      <List.Description as='a'>Updated 34 mins ago</List.Description>
-                    </List.Content>
-                  </List.Item>
-                </List>
-              </Grid.Column>
-            </Grid.Row>
-          </Grid>
-          <div>
-            Icons generated by <a href="https://www.flaticon.com">flaticon.com</a>. <p>Under <a href="http://creativecommons.org/licenses/by/3.0/">CC</a>: <a data-file="014-stairs" href="http://www.freepik.com">Freepik</a>, <a data-file="005-bin" href="https://www.flaticon.com/authors/smashicons">Smashicons</a>, <a data-file="011-box" href="https://www.flaticon.com/authors/pixel-perfect">Pixel perfect</a></p>
-          </div>
+          Icons generated by <a href="https://www.flaticon.com">flaticon.com</a>. <p>Under <a href="http://creativecommons.org/licenses/by/3.0/">CC</a>: <a data-file="014-stairs" href="http://www.freepik.com">Freepik</a>, <a data-file="005-bin" href="https://www.flaticon.com/authors/smashicons">Smashicons</a>, <a data-file="011-box" href="https://www.flaticon.com/authors/pixel-perfect">Pixel perfect</a></p>
         </div>
-      </Ref>
+      </div>
+    </Ref>
   );
 }
