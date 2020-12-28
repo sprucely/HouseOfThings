@@ -141,14 +141,17 @@ namespace HoT.Web.Controllers
                 var siblingParentIdAndSorts = await (
                     from sibling in _dbContext.Locations.Where(l => l.Id == moveLocationModel.ToSiblingOfLocationId)
                     from location in _dbContext.Locations
-                    where string.Compare(location.Sort, sibling.Sort) < 0 && location.ParentId == sibling.ParentId
+                    where string.Compare(location.Sort, sibling.Sort) >= 0 && location.ParentId == sibling.ParentId
                     orderby location.Sort
                     select new { location.ParentId, location.Sort })
                     .Take(2)
                     .ToArrayAsync();
 
                 moveLocation.ParentId = siblingParentIdAndSorts[0].ParentId;
-                moveLocation.Sort = siblingParentIdAndSorts[0].Sort.GetNextMidstring(siblingParentIdAndSorts?[1].Sort ?? "");
+                moveLocation.Sort = siblingParentIdAndSorts[0].Sort.GetNextMidstring(
+                    siblingParentIdAndSorts.Length == 2
+                    ? siblingParentIdAndSorts[1].Sort
+                    : "");
             }
 
             await _dbContext.SaveChangesAsync();
