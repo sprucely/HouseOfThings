@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
 // @ts-ignore
 import ReactTags, { Tag } from 'react-tag-autocomplete';
+import Axios from 'axios';
+import { none, useState } from '@hookstate/core';
+import { Ref } from 'semantic-ui-react';
 
 import './TagStyles.css';
 import { TagModel } from '../types';
-import Axios from 'axios';
-import { none, useState } from '@hookstate/core';
 import { clone } from '../utilities/state';
-import { Ref } from 'semantic-ui-react';
 
 
 type TagLookupProps = {

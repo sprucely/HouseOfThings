@@ -1,6 +1,7 @@
 import { createState, State, useState } from '@hookstate/core';
 import React from 'react'
 import { Button, Form, Input, Modal, Select } from 'semantic-ui-react'
+
 import { LocationModel, LocationTypeModel } from '../types'
 import { fetchLocationTypes } from '../services/data';
 import { clone } from '../utilities/state';

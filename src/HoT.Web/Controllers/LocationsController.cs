@@ -49,7 +49,7 @@ namespace HoT.Web.Controllers
                 .SingleAsync();
 
 
-            
+
 
             var location = new Location
             {
@@ -77,7 +77,7 @@ namespace HoT.Web.Controllers
 
             return locationModel;
         }
-                
+
         [HttpPost]
         [Route("update")]
         public async Task<ActionResult<LocationModel>> Update([FromBody] LocationModel locationModel)
@@ -98,19 +98,62 @@ namespace HoT.Web.Controllers
             var wantedTags = (await _dbContext.CreateOrFindTags(allTagNames)).ToHashSet();
             var currentTags = location.Tags.ToHashSet();
 
-            foreach(var removeTag in currentTags.Except(wantedTags))
+            foreach (var removeTag in currentTags.Except(wantedTags))
             {
                 location.Tags.Remove(removeTag);
             }
 
-            foreach(var addTag in wantedTags.Except(currentTags))
+            foreach (var addTag in wantedTags.Except(currentTags))
             {
                 location.Tags.Add(addTag);
             }
-            
+
             await _dbContext.SaveChangesAsync();
 
             return locationModel;
+        }
+
+        [HttpPost]
+        [Route("move")]
+        public async Task<ActionResult<IEnumerable<LocationModel>>> Move([FromBody] MoveLocationModel moveLocationModel)
+        {
+            if (!moveLocationModel.ToChildOfLocationId.HasValue && !moveLocationModel.ToSiblingOfLocationId.HasValue)
+                return BadRequest();
+
+            var moveLocation = await _dbContext.Locations.SingleAsync(l => l.Id == moveLocationModel.MoveLocationId);
+
+            if (moveLocationModel.ToChildOfLocationId.HasValue)
+            {
+                // get Sort value of new parent location's first child
+                var firstChildSort = (await _dbContext.Locations
+                    .Where(l => l.ParentId == moveLocationModel.ToChildOfLocationId)
+                    .OrderBy(l => l.Sort)
+                    .Select(l => l.Sort)
+                    .FirstOrDefaultAsync())
+                    ?? "";
+
+                moveLocation.ParentId = moveLocationModel.ToChildOfLocationId;
+                moveLocation.Sort = "".GetNextMidstring(firstChildSort);
+
+            }
+            else
+            {
+                var siblingParentIdAndSorts = await (
+                    from sibling in _dbContext.Locations.Where(l => l.Id == moveLocationModel.ToSiblingOfLocationId)
+                    from location in _dbContext.Locations
+                    where string.Compare(location.Sort, sibling.Sort) < 0 && location.ParentId == sibling.ParentId
+                    orderby location.Sort
+                    select new { location.ParentId, location.Sort })
+                    .Take(2)
+                    .ToArrayAsync();
+
+                moveLocation.ParentId = siblingParentIdAndSorts[0].ParentId;
+                moveLocation.Sort = siblingParentIdAndSorts[0].Sort.GetNextMidstring(siblingParentIdAndSorts?[1].Sort ?? "");
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return await Search(moveLocationModel.LocationFilter);
         }
 
         [HttpPost]
@@ -163,22 +206,22 @@ namespace HoT.Web.Controllers
                 .Where(l => l.ParentId == parentId)
                 .Select(l => l.Id);
 
-            var childLocationIds = _dbContext.LocationsClosures
+            var descendantLocationIds = _dbContext.LocationsClosures
                 .Where(lc => locationIds.Contains(lc.ParentId))
                 .Select(lc => lc.ChildId);
 
             return _dbContext.Locations
-                .Where(l => childLocationIds.Contains(l.Id));
+                .Where(l => descendantLocationIds.Contains(l.Id));
         }
 
         private IQueryable<Location> GetLocationsByLocationId(int? locationId)
         {
-            var childLocationIds = _dbContext.LocationsClosures
+            var descendantLocationIds = _dbContext.LocationsClosures
                 .Where(lc => lc.ParentId == locationId)
                 .Select(lc => lc.ChildId);
 
             return _dbContext.Locations
-                .Where(l => childLocationIds.Contains(l.Id));
+                .Where(l => descendantLocationIds.Contains(l.Id));
         }
 
         private IQueryable<Location> GetLocationsByTagFilter(TagFilterModel tagFilter)
@@ -207,17 +250,17 @@ namespace HoT.Web.Controllers
             else
             {
                 // return locations whose selves or ancestors are tagged with ANY given tags
-                var parentLocationIds = _dbContext.Locations
+                var ancestorLocationIds = _dbContext.Locations
                     .Where(l => l.Tags.Any(t => tagIds.Contains(t.Id)))
                     .Select(l => l.Id);
 
-                var childLocationIds = _dbContext.LocationsClosures
-                    .Where(lc => parentLocationIds.Contains(lc.ParentId))
+                var descendantLocationIds = _dbContext.LocationsClosures
+                    .Where(lc => ancestorLocationIds.Contains(lc.ParentId))
                     .Select(lc => lc.ChildId);
 
 
                 filteredLocations = _dbContext.Locations
-                    .Where(l => childLocationIds.Contains(l.Id));
+                    .Where(l => descendantLocationIds.Contains(l.Id));
             }
 
             return filteredLocations;

@@ -5,6 +5,7 @@ import { useDrag, useDrop } from 'react-dnd'
 
 import { DragData, DragDataItem, DragItemTypes, DropData, LocationModel } from '../types';
 import { getLocationTypeIconClasses } from '../services/data';
+import { isInPath } from '../utilities/location-path';
 
 type LocationTreeProps = {
   locations: State<LocationModel[]>;
@@ -105,7 +106,8 @@ function LocationTreeItem(props: LocationTreeItemProps) {
     }
   })
 
-  const disableForDrops = (draggingLocationPath && location.nested('path').get().startsWith(draggingLocationPath)) || false;
+  const disableForDrops = (draggingLocationPath && isInPath(draggingLocationPath, location.nested('path').get())) || false;
+  
 
   return (
     (<List.Item
@@ -133,7 +135,7 @@ function LocationTreeItem(props: LocationTreeItemProps) {
                 textAlign='left'>
                 <Ref innerRef={dropChild}>
                   <span>
-                    <ListHeader>{location.name.get()}</ListHeader>
+                    <ListHeader>{location.name.get()} {location.nested('path').get()}</ListHeader>
                     <ListDescription>{location.description.get()}</ListDescription>
                   </span>
                 </Ref>

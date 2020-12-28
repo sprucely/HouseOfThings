@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container } from 'semantic-ui-react';
+
 import { NavMenu } from './NavMenu';
 
 export const Layout = (props: any) => {

@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect } from 'react';
 import { State, useState } from '@hookstate/core';
 import { Grid, List, Menu, Ref } from 'semantic-ui-react';
+import { useDrop } from 'react-dnd';
 
 import { TagLookup } from './TagLookup';
 import { DragDataItem, DragItemTypes, DropData, LocationFilterModel, LocationModel, TagModel } from '../types';
 import { LocationTree } from './LocationTree';
-import { createLocation, searchLocations, updateLocation } from '../services/data';
+import { createLocation, moveLocation, searchLocations, updateLocation } from '../services/data';
 import { EditLocationModal } from './EditLocationModal';
 import { clone } from '../utilities/state';
-import { useDrop } from 'react-dnd';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
+import { isInPath } from '../utilities/location-path';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
 
@@ -132,21 +133,32 @@ export const Locations = () => {
   }, [requestSearchLocations]);
 
   const handleCanDropItem = useCallback((data: DropData) => {
-    const isOverSelfOrNestedLocation = data.dropTarget.nested("path").get().startsWith(data.dragItem.nested("path").get());
-    return !isOverSelfOrNestedLocation;
+    return !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get());
   }, [])
 
   const handleDropItem = useCallback(async (data: DropData) => {
-    const isOverSelfOrNestedLocation = data.dropTarget.nested("path").get().startsWith(data.dragItem.nested("path").get());
-    if (!isOverSelfOrNestedLocation) {
-      if (await getConfirmation("Really?", "Are you certain?")) {
-        console.log("yay");
-      }
-      else {
-        console.log("boo")
+    if (locationsPromise !== null && !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get())) {
+      const location = data.dragItem;
+      const targetLocation = data.dropTarget;
+      const message = data.targetPlacement === 'child'
+        ? `Moving ${location.name.get()} into ${targetLocation.name.get()}`
+        : `Moving ${location.name.get()} next to ${targetLocation.name.get()}`;
+
+      if (await getConfirmation("Moving Location", message)) {
+
+        locationsPromise.then(() => {
+          locationsPromise = moveLocation({
+            moveLocationId: location.id.get(),
+            toChildOfLocationId: data.targetPlacement === 'child' ? targetLocation.id.get() : undefined,
+            toSiblingOfLocationId: data.targetPlacement === 'sibling' ? targetLocation.id.get() : undefined
+          });
+          locations.set(locationsPromise);
+          locationsPromise.then(() => activateFirstLocation());
+        });    
+        hasActiveLocation.set(false);  
       }
     }
-  }, [getConfirmation])
+  }, [getConfirmation, activateFirstLocation, hasActiveLocation, locations])
 
   const [{ draggingLocation }, dropLocation] = useDrop({
     accept: DragItemTypes.LOCATION,
