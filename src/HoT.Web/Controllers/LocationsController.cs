@@ -82,7 +82,10 @@ namespace HoT.Web.Controllers
         [Route("update")]
         public async Task<ActionResult<LocationModel>> Update([FromBody] LocationModel locationModel)
         {
-            var locationType = await _dbContext.LocationTypes.FirstOrDefaultAsync(lt => lt.Name == locationModel.LocationType);
+            var locationTypeId = await _dbContext.LocationTypes
+                .Where(lt => lt.Name == locationModel.LocationType)
+                .Select(lt => lt.Id)
+                .SingleAsync();
 
             var location = await _dbContext.Locations
                 .Where(l => l.Id == locationModel.Id)
@@ -91,6 +94,7 @@ namespace HoT.Web.Controllers
 
             location.Name = locationModel.Name;
             location.Description = locationModel.Description;
+            location.LocationTypeId = locationTypeId;
 
             // reconcile current and wanted tags....
             var allTagNames = locationModel.GetTagNames();

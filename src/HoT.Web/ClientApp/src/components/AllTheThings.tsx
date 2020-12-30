@@ -7,16 +7,23 @@ import { TagLookup } from './TagLookup';
 import { DragDataItem, DragItemTypes, DropData, LocationFilterModel, LocationModel, TagModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { createLocation, moveLocation, searchLocations, updateLocation } from '../services/data';
-import { EditLocationModal } from './EditLocationModal';
+import { EditLocation, editLocationDefaultsGlobal } from './EditLocation';
 import { clone } from '../utilities/state';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
 import { isInPath } from '../utilities/location-path';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
 
-export const Locations = () => {
+const defaultLocation: LocationModel = {
+  id: 0, parentId: null, rootId: 0, depth: 0, path: "",
+  moveable: false, locationType: "Default", isActive: false,
+  name: "", description: ""
+};
+
+export const AllTheThings = () => {
   const locations = useState<LocationModel[]>([]);
   const hasActiveLocation = useState(false);
+  const editLocation = useState<LocationModel>(clone(defaultLocation));
 
   const { getConfirmation } = useConfirmationDialog();
 
@@ -71,12 +78,18 @@ export const Locations = () => {
     return (!locations.promised && !locations.error && locations.find(l => l.isActive.get())) || null;
   }, [locations]);
 
-  const handleAddLocationResult = useCallback(async (addedLocation: LocationModel | null) => {
+  const handleAddLocation = useCallback(async () => {
     const activeLocation = getActiveLocation();
+    if (!activeLocation) return;
+    editLocation.merge(l => { 
+      l = clone(defaultLocation);
+      l.locationType = editLocationDefaultsGlobal.locationType.get();
+      l.parentId = activeLocation.id.get();
+      return l;
+    });
 
-    if (addedLocation && activeLocation && !locations.promised && !locations.error) {
-      addedLocation = clone(addedLocation);
-      addedLocation.parentId = activeLocation.id.get();
+    if (await getConfirmation({ title: "Add Location", content: () => <EditLocation location={editLocation} /> })) {
+      const addedLocation = clone(editLocation.value);
       let parentIndex: number | null = null;
 
       // doing equivalent of [].splice(parentIndex, 0, addedLocation) using hookState's merge
@@ -102,27 +115,22 @@ export const Locations = () => {
       // replace editedLocation with createdLocation
       locations[(parentIndex || -1) + 1].merge(createdLocation);
     }
-  }, [getActiveLocation, locations]);
 
-  const handleEditLocationResult = useCallback(async (editedLocation: LocationModel | null) => {
-    if (editedLocation) {
-      editedLocation = clone(editedLocation);
+  }, [getActiveLocation, editLocation, getConfirmation, locations]);
 
-      const activeLocation = getActiveLocation();
+  const handleEditLocation = useCallback(async () => {
+    const location = getActiveLocation();
+    if (!location) return;
+    editLocation.merge(clone(location.value))
 
-      if (activeLocation) {
-        //locations.merge({ editedLocationIndex: editedLocation } as Record<number, LocationModel>);
-        activeLocation.set(editedLocation);
-
-        editedLocation = await updateLocation(editedLocation);
-        editedLocation.isActive = true;
-
-        // locations.merge({ editedLocationIndex: editedLocation } as Record<number, LocationModel>);
-        activeLocation.set(editedLocation);
-      }
-
+    if (await getConfirmation({ title: "Edit Location", content: () => <EditLocation location={editLocation} /> })) {
+      const editedLocation = clone(editLocation.value);
+      location.merge(editedLocation);
+      const updatedLocation = await updateLocation(editLocation.value);
+      location.merge(updatedLocation);
     }
-  }, [getActiveLocation]);
+
+  }, [getActiveLocation, editLocation, getConfirmation]);
 
   const handleEnterLocation = useCallback((location: State<LocationModel>) => {
     requestSearchLocations({ locationId: location.id.get(), tagFilter: { tags: [], includeAllTags: false } });
@@ -140,11 +148,11 @@ export const Locations = () => {
     if (locationsPromise !== null && !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get())) {
       const location = data.dragItem;
       const targetLocation = data.dropTarget;
-      const message = data.targetPlacement === 'child'
+      const content = data.targetPlacement === 'child'
         ? `Moving ${location.name.get()} into ${targetLocation.name.get()}`
         : `Moving ${location.name.get()} next to ${targetLocation.name.get()}`;
 
-      if (await getConfirmation("Moving Location", message)) {
+      if (await getConfirmation({ title: "Moving Location", content })) {
 
         locationsPromise.then(() => {
           locationsPromise = moveLocation({
@@ -154,8 +162,8 @@ export const Locations = () => {
           });
           locations.set(locationsPromise);
           locationsPromise.then(() => activateFirstLocation());
-        });    
-        hasActiveLocation.set(false);  
+        });
+        hasActiveLocation.set(false);
       }
     }
   }, [getConfirmation, activateFirstLocation, hasActiveLocation, locations])
@@ -187,17 +195,8 @@ export const Locations = () => {
             <Grid.Column>
               <TagLookup onTagsChanged={handleTagsChanged} />
               <Menu icon='labeled'>
-                <EditLocationModal
-                  action='Add'
-                  onClose={handleAddLocationResult}
-                  trigger={
-                    <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} />} />
-                <EditLocationModal
-                  action='Edit'
-                  onOpen={() => getActiveLocation()}
-                  onClose={handleEditLocationResult}
-                  trigger={
-                    <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} />} />
+                <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
+                <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} onClick={handleEditLocation} />
                 <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
 
 

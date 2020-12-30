@@ -26,9 +26,8 @@ export type LocationModel = {
   name?: string;
   description?: string;
   expanded?: boolean;
-  locationType: string
-  isActive: boolean,
-  isDefault: boolean;
+  locationType: string;
+  isActive: boolean;
 }
 
 export type LocationTypeModel = {

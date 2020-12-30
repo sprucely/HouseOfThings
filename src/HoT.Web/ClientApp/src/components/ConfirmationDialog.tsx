@@ -1,31 +1,37 @@
 import { createState, useState } from '@hookstate/core';
 import React, { useCallback } from 'react'
-import { Confirm } from 'semantic-ui-react'
+import { Confirm, ModalContentProps, SemanticShorthandItem } from 'semantic-ui-react'
 
-type Dialog = {
-  open: boolean;
+type Content = SemanticShorthandItem<ModalContentProps>;
+
+type DialogOptions = {
   title: string;
-  message: string;
+  content?: Content;
+  renderContent?: () => Content;
+}
+
+type Dialog = DialogOptions & {
+  open: boolean;
   onClose: (confirmed: boolean) => void;
 }
 
-const defaultOptions = { 
-  open: false, 
-  title:"", 
-  message:"",
-  onClose: (_) => { } 
+const defaultOptions = {
+  open: false,
+  title: "",
+  content: "",
+  onClose: (_) => { }
 } as Dialog;
 
 const dialogGlobal = createState<Dialog>(defaultOptions);
 
-const openDialog = (title: string, message: string, onClose: (confirmed: boolean) => void) => {
-  dialogGlobal.merge({ open: true, title, message, onClose });
+const openDialog = (props: Dialog) => {
+  dialogGlobal.merge(props);
 }
 
 export const useConfirmationDialog = () => {
-  const getConfirmation = (title: string, message: string) => {
+  const getConfirmation = (options: DialogOptions) => {
     return new Promise<boolean>((res) => {
-      openDialog(title, message, res);
+      openDialog({ ...options, onClose: res, open: true });
     });
   }
 
@@ -50,13 +56,16 @@ export const ConfirmationDialog = () => {
     onClose(true);
   }, [dialog]);
 
-  return (
-    <Confirm
-      open={dialog.open.get()}
-      header={dialog.title.get()}
-      content={dialog.message.get()}
-      onCancel={handleConfirmCancel}
-      onConfirm={handleConfirmOk}
-    />
-  );
+  const renderContent = dialog.renderContent.get();
+  const content: Content = dialog.content.get() || (renderContent && renderContent()) || "";
+
+return (
+  <Confirm
+    open={dialog.open.get()}
+    header={dialog.title.get()}
+    content={content}
+    onCancel={handleConfirmCancel}
+    onConfirm={handleConfirmOk}
+  />
+);
 }
