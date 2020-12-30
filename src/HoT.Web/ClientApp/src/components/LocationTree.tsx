@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useCallback } from 'react';
+import React, { SyntheticEvent } from 'react';
 import { Button, Dimmer, Grid, Icon, List, ListDescription, ListHeader, Loader, Popup, Ref, Segment } from 'semantic-ui-react';
 import { createState, State, useState } from '@hookstate/core';
 import { useDrag, useDrop } from 'react-dnd'
@@ -46,18 +46,18 @@ function LocationTreeItem(props: LocationTreeItemProps) {
   const iconClasses = useState(iconClassesGlobal);
   const draggingLocationPath = (draggingLocation && draggingLocation.nested('path').get()) || null;
 
-  const handleItemClick = useCallback((e: SyntheticEvent) => {
+  const handleItemClick = (e: SyntheticEvent) => {
     if (!location.isActive.get()) {
       onActivateLocation(location);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, onActivateLocation]);
+  };
 
-  const handleItemDoubleClick = useCallback((e: SyntheticEvent) => {
+  const handleItemDoubleClick = (e: SyntheticEvent) => {
     onEnterLocation(location);
     e.preventDefault();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, onEnterLocation]);
+  };
 
   const [, drag] = useDrag({
     item: {

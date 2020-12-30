@@ -1,5 +1,5 @@
 import { createState, useState } from '@hookstate/core';
-import React, { useCallback } from 'react'
+import React from 'react'
 import { Confirm, ModalContentProps, SemanticShorthandItem } from 'semantic-ui-react'
 
 type Content = SemanticShorthandItem<ModalContentProps>;
@@ -42,19 +42,19 @@ export const useConfirmationDialog = () => {
 export const ConfirmationDialog = () => {
   const dialog = useState(dialogGlobal);
 
-  const handleConfirmCancel = useCallback(() => {
+  const handleConfirmCancel = () => {
     const onClose = dialog.onClose.get();
     dialog.open.set(false);
     dialog.merge(defaultOptions);
     onClose(false);
-  }, [dialog]);
+  };
 
-  const handleConfirmOk = useCallback(() => {
+  const handleConfirmOk = () => {
     const onClose = dialog.onClose.get();
     dialog.open.set(false);
     dialog.merge(defaultOptions);
     onClose(true);
-  }, [dialog]);
+  };
 
   const renderContent = dialog.renderContent.get();
   const content: Content = dialog.content.get() || (renderContent && renderContent()) || "";

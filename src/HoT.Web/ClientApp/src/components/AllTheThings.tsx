@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { State, useState } from '@hookstate/core';
 import { Grid, List, Menu, Ref } from 'semantic-ui-react';
 import { useDrop } from 'react-dnd';
@@ -32,7 +32,7 @@ export const AllTheThings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleActivateLocation = useCallback((activatedLocation: State<LocationModel>) => {
+  const handleActivateLocation = (activatedLocation: State<LocationModel>) => {
 
     const activeLocationId = activatedLocation.id.get();
 
@@ -45,16 +45,16 @@ export const AllTheThings = () => {
 
     activatedLocation.isActive.set(true);
     hasActiveLocation.set(true);
-  }, [hasActiveLocation, locations]);
+  };
 
-  const activateFirstLocation = useCallback(() => {
+  const activateFirstLocation = () => {
     const firstLocation = !locations.promised && !locations.error && locations.length && locations[0];
     if (firstLocation) {
       handleActivateLocation(firstLocation);
     }
-  }, [handleActivateLocation, locations]);
+  };
 
-  const requestSearchLocations = useCallback((filter: LocationFilterModel) => {
+  const requestSearchLocations = (filter: LocationFilterModel) => {
     if (locationsPromise === null) {
       locationsPromise = searchLocations(filter);
       locations.set(locationsPromise);
@@ -68,17 +68,17 @@ export const AllTheThings = () => {
       });
     }
     hasActiveLocation.set(false);
-  }, [activateFirstLocation, hasActiveLocation, locations]);
+  };
 
-  const handleTagsChanged = useCallback((newTags: TagModel[]) => {
+  const handleTagsChanged = (newTags: TagModel[]) => {
     requestSearchLocations({ locationId: null, tagFilter: { tags: newTags, includeAllTags: false } });
-  }, [requestSearchLocations]);
+  };
 
-  const getActiveLocation = useCallback(() => {
+  const getActiveLocation = () => {
     return (!locations.promised && !locations.error && locations.find(l => l.isActive.get())) || null;
-  }, [locations]);
+  };
 
-  const handleAddLocation = useCallback(async () => {
+  const handleAddLocation = async () => {
     const activeLocation = getActiveLocation();
     if (!activeLocation) return;
     editLocation.merge(l => { 
@@ -116,9 +116,9 @@ export const AllTheThings = () => {
       locations[(parentIndex || -1) + 1].merge(createdLocation);
     }
 
-  }, [getActiveLocation, editLocation, getConfirmation, locations]);
+  };
 
-  const handleEditLocation = useCallback(async () => {
+  const handleEditLocation = async () => {
     const location = getActiveLocation();
     if (!location) return;
     editLocation.merge(clone(location.value))
@@ -130,21 +130,21 @@ export const AllTheThings = () => {
       location.merge(updatedLocation);
     }
 
-  }, [getActiveLocation, editLocation, getConfirmation]);
+  };
 
-  const handleEnterLocation = useCallback((location: State<LocationModel>) => {
+  const handleEnterLocation = (location: State<LocationModel>) => {
     requestSearchLocations({ locationId: location.id.get(), tagFilter: { tags: [], includeAllTags: false } });
-  }, [requestSearchLocations]);
+  };
 
-  const handleExitLocation = useCallback((location: State<LocationModel>) => {
+  const handleExitLocation = (location: State<LocationModel>) => {
     requestSearchLocations({ locationId: location.parentId.get(), tagFilter: { tags: [], includeAllTags: false } });
-  }, [requestSearchLocations]);
+  };
 
-  const handleCanDropItem = useCallback((data: DropData) => {
+  const handleCanDropItem = (data: DropData) => {
     return !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get());
-  }, [])
+  };
 
-  const handleDropItem = useCallback(async (data: DropData) => {
+  const handleDropItem = async (data: DropData) => {
     if (locationsPromise !== null && !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get())) {
       const location = data.dragItem;
       const targetLocation = data.dropTarget;
@@ -166,7 +166,7 @@ export const AllTheThings = () => {
         hasActiveLocation.set(false);
       }
     }
-  }, [getConfirmation, activateFirstLocation, hasActiveLocation, locations])
+  };
 
   const [{ draggingLocation }, dropLocation] = useDrop({
     accept: DragItemTypes.LOCATION,
