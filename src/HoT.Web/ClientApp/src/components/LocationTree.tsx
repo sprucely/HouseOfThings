@@ -13,8 +13,8 @@ type LocationTreeProps = {
   onActivateLocation: (activatedLocation: State<LocationModel>) => void;
   onEnterLocation: (enteredLocation: State<LocationModel>) => void;
   onExitLocation: (exitedLocation: State<LocationModel>) => void;
-  onCanDropItem: (data: DropData) => boolean;
-  onDropItem: (data: DropData) => void;
+  onCanDropData: (data: DropData) => boolean;
+  onDropData: (data: DropData) => void;
 };
 
 
@@ -25,8 +25,8 @@ type LocationTreeItemProps = {
   onActivateLocation: (activatedLocation: State<LocationModel>) => void;
   onEnterLocation: (enteredLocation: State<LocationModel>) => void;
   onExitLocation: (exitedLocation: State<LocationModel>) => void;
-  onCanDropItem: (data: DropData) => boolean;
-  onDropItem: (data: DropData) => void;
+  onCanDropData: (data: DropData) => boolean;
+  onDropData: (data: DropData) => void;
 }
 
 const iconClassesGlobal = createState(getLocationTypeIconClasses());
@@ -38,8 +38,8 @@ function LocationTreeItem(props: LocationTreeItemProps) {
     onActivateLocation,
     onEnterLocation,
     onExitLocation,
-    onCanDropItem,
-    onDropItem
+    onCanDropData,
+    onDropData
   } = props;
 
   const location = useState(_location);
@@ -76,11 +76,11 @@ function LocationTreeItem(props: LocationTreeItemProps) {
     accept: DragItemTypes.LOCATION,
     drop: (item, monitor) => {
       const { dragData } = item as DragDataItem;
-      onDropItem({ ...dragData, dropTarget: location, targetPlacement: 'child' });
+      onDropData({ ...dragData, dropTarget: location, targetPlacement: 'child' });
     },
     canDrop: (item, monitor) => {
       const { dragData } = item as DragDataItem;
-      return onCanDropItem({ ...dragData, dropTarget: location, targetPlacement: 'child' });
+      return onCanDropData({ ...dragData, dropTarget: location, targetPlacement: 'child' });
     },
     collect: (monitor) => {
       return {
@@ -93,11 +93,11 @@ function LocationTreeItem(props: LocationTreeItemProps) {
     accept: DragItemTypes.LOCATION,
     drop: (item, monitor) => {
       const { dragData } = item as DragDataItem;
-      onDropItem({ ...dragData, dropTarget: location, targetPlacement: 'sibling' });
+      onDropData({ ...dragData, dropTarget: location, targetPlacement: 'sibling' });
     },
     canDrop: (item, monitor) => {
       const { dragData } = item as DragDataItem;
-      return onCanDropItem({ ...dragData, dropTarget: location, targetPlacement: 'sibling' });
+      return onCanDropData({ ...dragData, dropTarget: location, targetPlacement: 'sibling' });
     },
     collect: (monitor) => {
       return {
@@ -161,8 +161,8 @@ export function LocationTree(props: LocationTreeProps) {
     onActivateLocation,
     onEnterLocation,
     onExitLocation,
-    onCanDropItem,
-    onDropItem
+    onCanDropData,
+    onDropData
   } = props;
 
   const locations = useState(_locations);
@@ -180,8 +180,8 @@ export function LocationTree(props: LocationTreeProps) {
           onActivateLocation={onActivateLocation}
           onEnterLocation={onEnterLocation}
           onExitLocation={onExitLocation}
-          onCanDropItem={onCanDropItem}
-          onDropItem={onDropItem} />
+          onCanDropData={onCanDropData}
+          onDropData={onDropData} />
       ))}
     </List>
   </Segment>

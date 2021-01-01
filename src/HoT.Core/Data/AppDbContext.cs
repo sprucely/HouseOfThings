@@ -14,12 +14,12 @@ namespace HoT.Core.Data
             this.OverrideNoCaseCollation();
         }
 
-        public AppDbContext(DbContextOptions<AppDbContext> options): base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
             this.OverrideNoCaseCollation();
         }
 
-        public DbSet<Item> Items { get; set; }  
+        public DbSet<Item> Items { get; set; }
 
         public DbSet<ItemTag> ItemsTags { get; set; }
 
@@ -45,15 +45,7 @@ namespace HoT.Core.Data
             LocationTag.OnModelCreating(modelBuilder);
             Tag.OnModelCreating(modelBuilder);
             LocationType.OnModelCreating(modelBuilder);
+            Item.OnModelCreating(modelBuilder);
         }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
- 
-
-       }
     }
-
-
 }

@@ -12,8 +12,12 @@ export type TagFilterModel = {
 
 export type LocationFilterModel = {
   tagFilter: TagFilterModel;
-  locationId: number | null; 
-  //parentId: number | null;
+  locationId: number | null;
+};
+
+export type ItemFilterModel = {
+  tagFilter: TagFilterModel | null;
+  locationId: number | null;
 };
 
 export type LocationModel = {
@@ -23,9 +27,8 @@ export type LocationModel = {
   depth: number;
   path: string;
   moveable: boolean;
-  name?: string;
-  description?: string;
-  expanded?: boolean;
+  name: string;
+  description: string;
   locationType: string;
   isActive: boolean;
 }
@@ -36,6 +39,20 @@ export type LocationTypeModel = {
   iconClass: string;
 }
 
+export type ItemModel = {
+  id: number;
+  locationId: number;
+  locationName: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+export type MoveItemsModel = {
+  itemIds: number[];
+  oLocationId: number;
+}
+
 export const DragItemTypes = {
   LOCATION: 'location',
   ITEM: 'item'
@@ -43,7 +60,7 @@ export const DragItemTypes = {
 
 export type DragData = {
   dragItemType: 'location' | 'item';
-  dragItem: State<LocationModel>;
+  dragItem: State<LocationModel> | State<ItemModel>[];
 }
 
 export type DragDataItem = {

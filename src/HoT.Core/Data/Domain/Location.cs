@@ -25,6 +25,8 @@ namespace HoT.Core.Data.Domain
 
         public ICollection<Tag> Tags { get; set; }
 
+        public ICollection<Item> Items { get; set; }
+
         public LocationType LocationType { get; set; }
 
 

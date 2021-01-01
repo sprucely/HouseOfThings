@@ -1,18 +1,21 @@
 import React, { useEffect } from 'react';
 import { State, useState } from '@hookstate/core';
-import { Grid, List, Menu, Ref } from 'semantic-ui-react';
+import { Grid, Menu, Ref } from 'semantic-ui-react';
 import { useDrop } from 'react-dnd';
 
 import { TagLookup } from './TagLookup';
-import { DragDataItem, DragItemTypes, DropData, LocationFilterModel, LocationModel, TagModel } from '../types';
+import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel, TagModel } from '../types';
 import { LocationTree } from './LocationTree';
-import { createLocation, moveLocation, searchLocations, updateLocation } from '../services/data';
+import { ItemList } from './ItemList';
+import { createItem, createLocation, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
 import { EditLocation, editLocationDefaultsGlobal } from './EditLocation';
 import { clone } from '../utilities/state';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
 import { isInPath } from '../utilities/location-path';
+import { EditItem } from './EditItem';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
+let itemsPromise: Promise<ItemModel[]> | null = null;
 
 const defaultLocation: LocationModel = {
   id: 0, parentId: null, rootId: 0, depth: 0, path: "",
@@ -20,10 +23,18 @@ const defaultLocation: LocationModel = {
   name: "", description: ""
 };
 
+const defaultItem: ItemModel = {
+  id: 0, locationId: 0, locationName:"",
+  isActive: false, name: "", description: ""
+};
+
 export const AllTheThings = () => {
   const locations = useState<LocationModel[]>([]);
+  const items = useState<ItemModel[]>([]);
   const hasActiveLocation = useState(false);
+  const hasActiveItem = useState(false);
   const editLocation = useState<LocationModel>(clone(defaultLocation));
+  const editItem = useState<ItemModel>(clone(defaultItem));
 
   const { getConfirmation } = useConfirmationDialog();
 
@@ -32,25 +43,40 @@ export const AllTheThings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleActivateLocation = (activatedLocation: State<LocationModel>) => {
-
+  const activateLocation = (activatedLocation: State<LocationModel>) => {
     const activeLocationId = activatedLocation.id.get();
-
     const locationToDeactivate = !locations.promised && !locations.error
       && locations.find(l => l.isActive.get() && l.id.get() !== activeLocationId);
-
     if (locationToDeactivate) {
       locationToDeactivate.isActive.set(false)
     }
-
     activatedLocation.isActive.set(true);
     hasActiveLocation.set(true);
+    requestSearchItems({ locationId: activeLocationId, tagFilter: null })
   };
 
   const activateFirstLocation = () => {
     const firstLocation = !locations.promised && !locations.error && locations.length && locations[0];
     if (firstLocation) {
-      handleActivateLocation(firstLocation);
+      activateLocation(firstLocation);
+    }
+  };
+
+  const activateItem = (activatedItem: State<ItemModel>) => {
+    const activeItemId = activatedItem.id.get();
+    const itemToDeactivate = !items.promised && !items.error
+      && items.find(i => i.isActive.get() && i.id.get() !== activeItemId);
+    if (itemToDeactivate) {
+      itemToDeactivate.isActive.set(false)
+    }
+    activatedItem.isActive.set(true);
+    hasActiveItem.set(true);
+  };
+
+  const activateFirstItem = () => {
+    const firstItem = !items.promised && !items.error && items.length && items[0];
+    if (firstItem) {
+      activateItem(firstItem);
     }
   };
 
@@ -70,6 +96,22 @@ export const AllTheThings = () => {
     hasActiveLocation.set(false);
   };
 
+  const requestSearchItems = (filter: ItemFilterModel) => {
+    if (itemsPromise === null) {
+      itemsPromise = searchItems(filter);
+      items.set(itemsPromise);
+      itemsPromise.then(() => activateFirstItem());
+    } else {
+      // must be sure previous promise has resolved before calling set()...
+      itemsPromise.then(() => {
+        itemsPromise = searchItems(filter)
+        items.set(itemsPromise);
+        itemsPromise.then(() => activateFirstItem());
+      });
+    }
+    hasActiveItem.set(false);
+  };
+
   const handleTagsChanged = (newTags: TagModel[]) => {
     requestSearchLocations({ locationId: null, tagFilter: { tags: newTags, includeAllTags: false } });
   };
@@ -78,10 +120,14 @@ export const AllTheThings = () => {
     return (!locations.promised && !locations.error && locations.find(l => l.isActive.get())) || null;
   };
 
+  const getActiveItem = () => {
+    return (!items.promised && !items.error && items.find(i => i.isActive.get())) || null;
+  };
+
   const handleAddLocation = async () => {
     const activeLocation = getActiveLocation();
     if (!activeLocation) return;
-    editLocation.merge(l => { 
+    editLocation.merge(l => {
       l = clone(defaultLocation);
       l.locationType = editLocationDefaultsGlobal.locationType.get();
       l.parentId = activeLocation.id.get();
@@ -132,6 +178,49 @@ export const AllTheThings = () => {
 
   };
 
+  const handleAddItem = async () => {
+    const activeLocation = getActiveLocation();
+    if (!activeLocation) return;
+
+    editItem.merge(i => {
+      i = clone(defaultItem);
+      i.locationId = activeLocation.id.get();
+      return i;
+    });
+
+    if (await getConfirmation({ title: "Add Item", content: () => <EditItem item={editItem} /> })) {
+      const addedItem = clone(editItem.value);
+
+      items.merge(oldItems => {
+        const merge: { [key: number]: ItemModel } = {};
+        merge[0] = addedItem;
+        oldItems.map((i, index) => merge[index + 1] = i);
+        return merge;
+      })
+
+      activateFirstItem();
+      const createdItem = await createItem(addedItem);
+      // replace addedItem with createdItem
+      items[0].merge(createdItem);
+      activateFirstItem();
+    }
+
+  };
+
+  const handleEditItem = async () => {
+    const item = getActiveItem();
+    if (!item) return;
+    editItem.merge(clone(item.value))
+
+    if (await getConfirmation({ title: "Edit Item", content: () => <EditItem item={editItem} /> })) {
+      const editedItem = clone(editItem.value);
+      item.merge(editedItem);
+      const updatedItem = await updateItem(editedItem);
+      item.merge(updatedItem);
+    }
+
+  };
+
   const handleEnterLocation = (location: State<LocationModel>) => {
     requestSearchLocations({ locationId: location.id.get(), tagFilter: { tags: [], includeAllTags: false } });
   };
@@ -140,13 +229,18 @@ export const AllTheThings = () => {
     requestSearchLocations({ locationId: location.parentId.get(), tagFilter: { tags: [], includeAllTags: false } });
   };
 
-  const handleCanDropItem = (data: DropData) => {
-    return !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get());
+  const handleCanDropData = (data: DropData) => {
+    const location = data.dragItemType === 'location' && data.dragItem as State<LocationModel>;
+    if (location) {
+      return !isInPath(location.nested("path").get(), data.dropTarget.nested("path").get());
+    }
+
+    return true;
   };
 
-  const handleDropItem = async (data: DropData) => {
-    if (locationsPromise !== null && !isInPath(data.dragItem.nested("path").get(), data.dropTarget.nested("path").get())) {
-      const location = data.dragItem;
+  const handleDropData = async (data: DropData) => {
+    const location = (data.dragItemType === 'location' && data.dragItem) as State<LocationModel>;
+    if (location && locationsPromise !== null && !isInPath(location.nested("path").get(), data.dropTarget.nested("path").get())) {
       const targetLocation = data.dropTarget;
       const content = data.targetPlacement === 'child'
         ? `Moving ${location.name.get()} into ${targetLocation.name.get()}`
@@ -165,6 +259,8 @@ export const AllTheThings = () => {
         });
         hasActiveLocation.set(false);
       }
+    } else {
+      //const items = data.dragItemType === 'item' && data.dragItem as State<ItemModel>[];
     }
   };
 
@@ -195,46 +291,28 @@ export const AllTheThings = () => {
             <Grid.Column>
               <TagLookup onTagsChanged={handleTagsChanged} />
               <Menu icon='labeled'>
-                <Menu.Item icon="add square" name='Add Location' position='right' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
+                <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} position='right' />
                 <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} onClick={handleEditLocation} />
-                <Menu.Item icon="add" name='Add Thing' onClick={() => { }} disabled={!hasActiveLocation.get()} />
-
-
               </Menu>
               <LocationTree
                 locations={locations}
                 draggingLocation={draggingLocation}
-                onActivateLocation={handleActivateLocation}
+                onActivateLocation={activateLocation}
                 onEnterLocation={handleEnterLocation}
                 onExitLocation={handleExitLocation}
-                onCanDropItem={handleCanDropItem}
-                onDropItem={handleDropItem}
+                onCanDropData={handleCanDropData}
+                onDropData={handleDropData}
               />
             </Grid.Column>
             <Grid.Column>
-              <List divided relaxed>
-                <List.Item>
-                  <List.Icon name='github' size='large' verticalAlign='middle' />
-                  <List.Content>
-                    <List.Header as='a'>Semantic-Org/Semantic-UI</List.Header>
-                    <List.Description as='a'>Updated 10 mins ago</List.Description>
-                  </List.Content>
-                </List.Item>
-                <List.Item>
-                  <List.Icon name='github' size='large' verticalAlign='middle' />
-                  <List.Content>
-                    <List.Header as='a'>Semantic-Org/Semantic-UI-Docs</List.Header>
-                    <List.Description as='a'>Updated 22 mins ago</List.Description>
-                  </List.Content>
-                </List.Item>
-                <List.Item>
-                  <List.Icon name='github' size='large' verticalAlign='middle' />
-                  <List.Content>
-                    <List.Header as='a'>Semantic-Org/Semantic-UI-Meteor</List.Header>
-                    <List.Description as='a'>Updated 34 mins ago</List.Description>
-                  </List.Content>
-                </List.Item>
-              </List>
+              <Menu icon='labeled'>
+                <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
+                <Menu.Item icon="edit" name='Edit Thing' disabled={!hasActiveItem.get()} onClick={handleEditItem} />
+              </Menu>
+              <ItemList
+                items={items}
+                onActivateItem={activateItem}
+              />
             </Grid.Column>
           </Grid.Row>
         </Grid>

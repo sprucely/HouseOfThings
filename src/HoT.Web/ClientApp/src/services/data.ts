@@ -1,5 +1,5 @@
 import Axios from 'axios';
-import { LocationFilterModel, LocationModel, LocationTypeModel } from '../types';
+import { ItemFilterModel, ItemModel, LocationFilterModel, LocationModel, LocationTypeModel, MoveItemsModel } from '../types';
 
 
 type RequestMoveLocationModel = {
@@ -47,4 +47,23 @@ export async function moveLocation(requestMoveModel: RequestMoveLocationModel) {
   const moveModel = { ...requestMoveModel, locationFilter: lastUsedLocationFilter } as MoveLocationModel;
   const result = await Axios.post<LocationModel[]>("/api/locations/move", moveModel);
   return result.data;
+}
+
+export async function searchItems(itemFilter: ItemFilterModel) {
+  const result = await Axios.post<ItemModel[]>("/api/items/search", itemFilter);
+  return result.data || [];
+}
+
+export async function createItem(creatingItem: ItemModel) {
+  const result = await Axios.post<ItemModel>("/api/items/create", creatingItem);
+  return result.data;
+}
+
+export async function updateItem(updatingItem: ItemModel) {
+  const result = await Axios.post<ItemModel>("/api/items/update", updatingItem);
+  return result.data;
+}
+
+export async function moveItems(moveItemsModel: MoveItemsModel) {
+  await Axios.post("/api/items/move", moveItemsModel);
 }
