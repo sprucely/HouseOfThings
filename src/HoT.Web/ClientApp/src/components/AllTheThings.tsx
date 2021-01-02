@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { State, useState } from '@hookstate/core';
-import { Grid, Menu, Ref } from 'semantic-ui-react';
+import { Container, Grid, Menu, Ref } from 'semantic-ui-react';
 import { useDrop } from 'react-dnd';
 
 import { TagLookup } from './TagLookup';
@@ -24,7 +24,7 @@ const defaultLocation: LocationModel = {
 };
 
 const defaultItem: ItemModel = {
-  id: 0, locationId: 0, locationName:"",
+  id: 0, locationId: 0, locationName: "",
   isActive: false, name: "", description: ""
 };
 
@@ -286,14 +286,21 @@ export const AllTheThings = () => {
     <Ref innerRef={dropLocation}>
       <div>
         <ConfirmationDialog />
+        <Menu icon='labeled' fixed='top' inverted>
+          <Container>
+            <Menu.Item
+              header
+            ><h3>House of Things</h3></Menu.Item>
+            <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
+            <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} onClick={handleEditLocation} />
+            <TagLookup onTagsChanged={handleTagsChanged} />
+            <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
+            <Menu.Item icon="edit" name='Edit Thing' disabled={!hasActiveItem.get()} onClick={handleEditItem} />
+          </Container>
+        </Menu>
         <Grid columns={2} divided stackable>
           <Grid.Row>
             <Grid.Column>
-              <TagLookup onTagsChanged={handleTagsChanged} />
-              <Menu icon='labeled'>
-                <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} position='right' />
-                <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} onClick={handleEditLocation} />
-              </Menu>
               <LocationTree
                 locations={locations}
                 draggingLocation={draggingLocation}
@@ -305,10 +312,6 @@ export const AllTheThings = () => {
               />
             </Grid.Column>
             <Grid.Column>
-              <Menu icon='labeled'>
-                <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
-                <Menu.Item icon="edit" name='Edit Thing' disabled={!hasActiveItem.get()} onClick={handleEditItem} />
-              </Menu>
               <ItemList
                 items={items}
                 onActivateItem={activateItem}

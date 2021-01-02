@@ -17,7 +17,7 @@ namespace HoT.Core.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:Collation", "NOCASE")
-                .HasAnnotation("ProductVersion", "5.0.0-rc.2.20475.6");
+                .HasAnnotation("ProductVersion", "5.0.0");
 
             modelBuilder.Entity("HoT.Core.Data.Domain.Item", b =>
                 {
@@ -28,10 +28,17 @@ namespace HoT.Core.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("LocationId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("Name");
 
                     b.ToTable("Items");
                 });
@@ -60,6 +67,9 @@ namespace HoT.Core.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("LocationTypeId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("Moveable")
                         .HasColumnType("INTEGER");
 
@@ -69,9 +79,14 @@ namespace HoT.Core.Migrations
                     b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Sort")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentId");
+                    b.HasIndex("LocationTypeId");
+
+                    b.HasIndex("ParentId", "Sort");
 
                     b.ToTable("Locations");
                 });
@@ -87,7 +102,12 @@ namespace HoT.Core.Migrations
                     b.Property<int>("ChildId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Path")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("ParentId", "Depth", "ChildId");
+
+                    b.HasIndex("Path");
 
                     b.HasIndex("ChildId", "ParentId", "Depth")
                         .IsUnique();
@@ -108,6 +128,26 @@ namespace HoT.Core.Migrations
                     b.HasIndex("TagId");
 
                     b.ToTable("LocationsTags");
+                });
+
+            modelBuilder.Entity("HoT.Core.Data.Domain.LocationType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IconClass")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("LocationTypes");
                 });
 
             modelBuilder.Entity("HoT.Core.Data.Domain.Photo", b =>
@@ -146,7 +186,21 @@ namespace HoT.Core.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("HoT.Core.Data.Domain.Item", b =>
+                {
+                    b.HasOne("HoT.Core.Data.Domain.Location", "Location")
+                        .WithMany("Items")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Location");
                 });
 
             modelBuilder.Entity("HoT.Core.Data.Domain.ItemTag", b =>
@@ -170,10 +224,18 @@ namespace HoT.Core.Migrations
 
             modelBuilder.Entity("HoT.Core.Data.Domain.Location", b =>
                 {
+                    b.HasOne("HoT.Core.Data.Domain.LocationType", "LocationType")
+                        .WithMany()
+                        .HasForeignKey("LocationTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("HoT.Core.Data.Domain.Location", "Parent")
                         .WithMany()
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("LocationType");
 
                     b.Navigation("Parent");
                 });
@@ -230,6 +292,11 @@ namespace HoT.Core.Migrations
             modelBuilder.Entity("HoT.Core.Data.Domain.Item", b =>
                 {
                     b.Navigation("Photos");
+                });
+
+            modelBuilder.Entity("HoT.Core.Data.Domain.Location", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

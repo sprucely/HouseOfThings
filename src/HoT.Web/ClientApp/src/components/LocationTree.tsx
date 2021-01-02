@@ -126,7 +126,7 @@ function LocationTreeItem(props: LocationTreeItemProps) {
               <Grid.Column color={disableForDrops ? 'grey' : isDroppingAsSibling ? 'blue' : undefined} width={1}>
                 <Ref innerRef={dropSibling}>
                   <span>
-                    <Icon className={(!iconClasses.promised && !iconClasses.error && iconClasses.get()[location.locationType.get()]) || 'folder icon'}
+                    <Icon size='small' className={(!iconClasses.promised && !iconClasses.error && iconClasses.get()[location.locationType.get()]) || 'folder icon'}
                       inverted={isDroppingAsSibling} />
                   </span>
                 </Ref>
@@ -135,7 +135,7 @@ function LocationTreeItem(props: LocationTreeItemProps) {
                 textAlign='left'>
                 <Ref innerRef={dropChild}>
                   <span>
-                    <ListHeader>{location.name.get()} {location.nested('path').get()}</ListHeader>
+                    <ListHeader>{location.name.get()}</ListHeader>
                     <ListDescription>{location.description.get()}</ListDescription>
                   </span>
                 </Ref>

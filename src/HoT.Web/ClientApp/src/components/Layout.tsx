@@ -7,7 +7,7 @@ export const Layout = (props: any) => {
   const { children } = props;
   return (
     <Container style={{ marginTop: '3em' }}>
-      <NavMenu />
+      {/* <NavMenu /> */}
       {children}
     </Container>
   );

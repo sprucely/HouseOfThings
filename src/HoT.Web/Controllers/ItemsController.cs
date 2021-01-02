@@ -50,6 +50,10 @@ namespace HoT.Web.Controllers
             await _dbContext.SaveChangesAsync();
 
             itemModel.Id = item.Id;
+            itemModel.LocationName = await _dbContext.Locations
+                .Where(l => l.Id == itemModel.LocationId)
+                .Select(l => l.Name)
+                .SingleAsync();
 
             return itemModel;
         }

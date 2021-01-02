@@ -54,6 +54,7 @@ function ItemCard(props: ItemProps) {
   return (
     (<Card
       active={!item.promised && !item.error && item.isActive.get()}
+      color={!item.promised && !item.error && item.isActive.get() ? 'blue' : undefined}
       onMouseDown={handleItemClick}
       onDoubleClick={handleItemDoubleClick}
       raised={item.isActive.get()}
@@ -65,7 +66,7 @@ function ItemCard(props: ItemProps) {
           <Image src='/logo192.png' size='small' />
           <Card.Content>
             <Card.Header>{item.name.get()}</Card.Header>
-            <Card.Meta>Located in {item.locationId.get()}</Card.Meta>
+            {item.locationName.get() && <Card.Meta>Located in {item.locationName.get()}</Card.Meta>}
             {item.description.get() && <Card.Description>{item.description.get()}</Card.Description>}
           </Card.Content>
         </div>
