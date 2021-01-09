@@ -24,7 +24,7 @@ namespace HoT.Core.Data
             var locationTypeRoom = await _dbContext.CreateOrFindLocationType("Room", "flaticon-room");
             var locationTypeCloset = await _dbContext.CreateOrFindLocationType("Closet", "flaticon-closet");
             var locationTypeCabinet = await _dbContext.CreateOrFindLocationType("Cabinet", "flaticon-cabinet");
-            var locationTypeShelf = await _dbContext.CreateOrFindLocationType("Shelf", "flaticon-shelf");
+            var locationTypeShelf = await _dbContext.CreateOrFindLocationType("Shelf", "flaticon-shelf2");
             var locationTypeDrawer = await _dbContext.CreateOrFindLocationType("Drawer", "flaticon-drawer");
             var locationTypeBox = await _dbContext.CreateOrFindLocationType("Box", "flaticon-box");
             var locationTypeBin = await _dbContext.CreateOrFindLocationType("Bin", "flaticon-bin");

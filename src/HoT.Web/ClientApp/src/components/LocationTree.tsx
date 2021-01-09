@@ -13,6 +13,7 @@ type LocationTreeProps = {
   onActivateLocation: (activatedLocation: State<LocationModel>) => void;
   onEnterLocation: (enteredLocation: State<LocationModel>) => void;
   onExitLocation: (exitedLocation: State<LocationModel>) => void;
+  onEditLocation: (editLocation: State<LocationModel>) => void;
   onCanDropData: (data: DropData) => boolean;
   onDropData: (data: DropData) => void;
 };
@@ -21,10 +22,11 @@ type LocationTreeProps = {
 type LocationTreeItemProps = {
   location: State<LocationModel>;
   draggingLocation: State<LocationModel> | null;
-  rootIndex?: number;
+  itemIndex?: number;
   onActivateLocation: (activatedLocation: State<LocationModel>) => void;
   onEnterLocation: (enteredLocation: State<LocationModel>) => void;
   onExitLocation: (exitedLocation: State<LocationModel>) => void;
+  onEditLocation: (editLocation: State<LocationModel>) => void;
   onCanDropData: (data: DropData) => boolean;
   onDropData: (data: DropData) => void;
 }
@@ -33,11 +35,12 @@ const iconClassesGlobal = createState(getLocationTypeIconClasses());
 
 function LocationTreeItem(props: LocationTreeItemProps) {
   const { location: _location,
-    rootIndex,
+    itemIndex,
     draggingLocation,
     onActivateLocation,
     onEnterLocation,
     onExitLocation,
+    onEditLocation,
     onCanDropData,
     onDropData
   } = props;
@@ -54,7 +57,7 @@ function LocationTreeItem(props: LocationTreeItemProps) {
   };
 
   const handleItemDoubleClick = (e: SyntheticEvent) => {
-    onEnterLocation(location);
+    onEditLocation(location);
     e.preventDefault();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   };
@@ -106,8 +109,26 @@ function LocationTreeItem(props: LocationTreeItemProps) {
     }
   })
 
+  const [{ isDroppingItems }, dropItems] = useDrop({
+    accept: DragItemTypes.ITEMS,
+    drop: (item, monitor) => {
+      const { dragData } = item as DragDataItem;
+      onDropData({ ...dragData, dropTarget: location, targetPlacement: 'child' });
+    },
+    canDrop: (item, monitor) => {
+      const { dragData } = item as DragDataItem;
+      return onCanDropData({ ...dragData, dropTarget: location, targetPlacement: 'child' });
+    },
+    collect: (monitor) => {
+      return {
+        isDroppingItems: !!monitor.isOver()
+      };
+    }
+  })
+
   const disableForDrops = (draggingLocationPath && isInPath(draggingLocationPath, location.nested('path').get())) || false;
-  
+
+  const mouseHovering = useState(false);
 
   return (
     (<List.Item
@@ -115,7 +136,8 @@ function LocationTreeItem(props: LocationTreeItemProps) {
       onMouseDown={handleItemClick}
       onDoubleClick={handleItemDoubleClick}
       disabled={disableForDrops}
-      
+      onMouseEnter={() => mouseHovering.set(true)}
+      onMouseLeave={() => mouseHovering.set(false)}
 
     >
       <Ref innerRef={drag}>
@@ -131,19 +153,26 @@ function LocationTreeItem(props: LocationTreeItemProps) {
                   </span>
                 </Ref>
               </Grid.Column>
-              <Grid.Column color={disableForDrops ? 'grey' : isDroppingAsChild ? 'blue' : undefined} width={13 - location.depth.get() as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14}
+              <Grid.Column color={disableForDrops ? 'grey' : isDroppingAsChild || isDroppingItems ? 'blue' : undefined} width={13 - location.depth.get() as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14}
                 textAlign='left'>
-                <Ref innerRef={dropChild}>
+                <Ref innerRef={dropItems}>
                   <span>
-                    <ListHeader>{location.name.get()}</ListHeader>
-                    <ListDescription>{location.description.get()}</ListDescription>
+                    <Ref innerRef={dropChild}>
+                      <span>
+                        <ListHeader>{location.name.get()}</ListHeader>
+                        <ListDescription>{location.description.get()}</ListDescription>
+                      </span>
+                    </Ref>
                   </span>
                 </Ref>
               </Grid.Column>
               <Grid.Column width={1}>
-                {location.parentId.get() !== null && rootIndex === 0
+                {location.parentId.get() !== null && itemIndex === 0
                   && (<Popup content='Exit' trigger={(<Button size='mini' icon={(<Icon flipped='horizontally' name='sign-out' />)}
                     onClick={() => { onExitLocation(location); }} />)} />)}
+                {itemIndex !== 0 && mouseHovering.get()
+                  && (<Popup content='Enter' trigger={(<Button size='mini' icon={(<Icon name='sign-in' />)}
+                    onClick={() => { onEnterLocation(location); }} />)} />)}
               </Grid.Column>
             </Grid>
           </List.Content>}
@@ -161,6 +190,7 @@ export function LocationTree(props: LocationTreeProps) {
     onActivateLocation,
     onEnterLocation,
     onExitLocation,
+    onEditLocation,
     onCanDropData,
     onDropData
   } = props;
@@ -176,10 +206,11 @@ export function LocationTree(props: LocationTreeProps) {
         <LocationTreeItem key={locations[i].id.get()}
           location={locations[i]}
           draggingLocation={draggingLocation}
-          rootIndex={i}
+          itemIndex={i}
           onActivateLocation={onActivateLocation}
           onEnterLocation={onEnterLocation}
           onExitLocation={onExitLocation}
+          onEditLocation={onEditLocation}
           onCanDropData={onCanDropData}
           onDropData={onDropData} />
       ))}

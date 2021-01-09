@@ -45,26 +45,27 @@ export type ItemModel = {
   locationName: string;
   name: string;
   description: string;
-  isActive: boolean;
+  isSelected: boolean;
+  isSelecting: boolean;
 }
 
 export type MoveItemsModel = {
   itemIds: number[];
-  oLocationId: number;
+  toLocationId: number;
 }
 
 export const DragItemTypes = {
   LOCATION: 'location',
-  ITEM: 'item'
+  ITEMS: 'items'
 }
 
 export type DragData = {
-  dragItemType: 'location' | 'item';
+  dragItemType: 'location' | 'items';
   dragItem: State<LocationModel> | State<ItemModel>[];
 }
 
 export type DragDataItem = {
-  type: 'location' | 'item';
+  type: 'location' | 'items';
   dragData: DragData
 }
 

@@ -1,48 +1,64 @@
-import React, { SyntheticEvent } from 'react';
-import { Card, Dimmer, Loader, Ref, Segment, Image } from 'semantic-ui-react';
+import React, { SyntheticEvent, useEffect } from 'react';
+import { Button, Card, Dimmer, Loader, Ref, Segment, Image, MenuItem, Menu, List, Header } from 'semantic-ui-react';
 import { State, useState } from '@hookstate/core';
-import { useDrag } from 'react-dnd'
+import { useDrag } from 'react-dnd';
+import { TSelectableItemProps, SelectableGroup, createSelectable, SelectAll, DeselectAll } from 'react-selectable-fast';
 
-import { DragData, DragItemTypes, DropData, ItemModel } from '../types';
+import { DragData, DragItemTypes, ItemModel } from '../types';
+import { getColor } from '../utilities/style-overrides';
 
 type ItemListProps = {
   items: State<ItemModel[]>;
-  onActivateItem: (activatedItem: State<ItemModel>) => void;
+  onEditItem: (editItem: State<ItemModel>) => void;
 };
 
 
-type ItemProps = {
+type ItemProps = TSelectableItemProps & {
   item: State<ItemModel>;
-  onActivateItem: (activatedItem: State<ItemModel>) => void;
+  selectedItems: State<ItemModel>[]; // for drag/drop purposes
+  onEditItem: (editItem: State<ItemModel>) => void;
 }
 
 
 function ItemCard(props: ItemProps) {
   const {
     item: _item,
-    onActivateItem,
+    selectedItems,
+    onEditItem,
+    selectableRef,
+    isSelected,
+    isSelecting
   } = props;
 
   const item = useState(_item);
 
-  const handleItemClick = () => {
-    if (!item.isActive.get()) {
-      onActivateItem(item);
+  useEffect(() => {
+    if (!item.promised && !item.error) {
+      item.merge(i => {
+        i.isSelected = isSelected;
+        i.isSelecting = isSelecting;
+        return i;
+      });
     }
+
+  }, [isSelected, isSelecting, item]);
+
+  const handleItemClick = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   };
 
   const handleItemDoubleClick = (e: SyntheticEvent) => {
+    onEditItem(item);
     e.preventDefault();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   };
 
   const [, drag] = useDrag({
     item: {
-      type: DragItemTypes.LOCATION,
+      type: DragItemTypes.ITEMS,
       dragData: {
-        dragItemType: 'item',
-        dragItem: [],
+        dragItemType: 'items',
+        dragItem: selectedItems,
       } as DragData
     },
     collect: monitor => ({
@@ -50,51 +66,89 @@ function ItemCard(props: ItemProps) {
     }),
   })
 
-
   return (
     (<Card
-      active={!item.promised && !item.error && item.isActive.get()}
-      color={!item.promised && !item.error && item.isActive.get() ? 'blue' : undefined}
+      raised={isSelected || isSelecting}
+      color={isSelecting ? 'yellow' : isSelected ? 'blue' : undefined}
       onMouseDown={handleItemClick}
       onDoubleClick={handleItemDoubleClick}
-      raised={item.isActive.get()}
-
-
     >
       <Ref innerRef={drag}>
         <div>
-          <Image src='/logo192.png' size='small' />
-          <Card.Content>
-            <Card.Header>{item.name.get()}</Card.Header>
-            {item.locationName.get() && <Card.Meta>Located in {item.locationName.get()}</Card.Meta>}
-            {item.description.get() && <Card.Description>{item.description.get()}</Card.Description>}
-          </Card.Content>
+          <Ref innerRef={selectableRef}>
+            <div>
+              <Image src='/logo192.png' size='small' />
+              <Card.Content>
+                <div style={{ backgroundColor: isSelecting ? getColor('yellow') : isSelected ? getColor('blue') : undefined }}>
+                <List inverted={isSelecting || isSelected}>
+                  <List.Item><Card.Header>{item.name.get()}</Card.Header></List.Item>
+                  <List.Item>{item.locationName.get() && <Card.Meta size='small' disabled>Located in {item.locationName.get()}</Card.Meta>}</List.Item>
+                  <List.Item>{item.description.get() && <Card.Description size='small'>{item.description.get()}</Card.Description>}</List.Item>
+                </List>
+                </div>
+              </Card.Content>
+            </div>
+          </Ref>
         </div>
       </Ref>
     </Card>)
   );
 }
 
+const SelectableItemCard = createSelectable(ItemCard);
+
 
 export function ItemList(props: ItemListProps) {
   const {
     items: _items,
-    onActivateItem,
+    onEditItem,
   } = props;
 
   const items = useState(_items);
+  const [selectedItems, setSelectedItems] = React.useState<State<ItemModel>[]>([]);
+
+  const handleSelecting = () => {
+    console.log("selecting");
+  }
+
+  const handleSelectionClear = () => {
+    console.log("selectionClear");
+  }
+
+  const handleSelectionFinish = () => {
+    setSelectedItems(items.filter(i => i.isSelected.get()));
+  }
 
   return (<Segment basic>
     <Dimmer active={items.promised} >
       <Loader>Loading</Loader>
     </Dimmer>
-    <Card.Group itemsPerRow={3}>
-      {!items.promised && !items.error && items.keys.map((i) => (
-        <ItemCard key={items[i].id.get()}
-          item={items[i]}
-          onActivateItem={onActivateItem} />
-      ))}
-    </Card.Group>
+    <SelectableGroup
+      //className="main"
+      //clickClassName="tick"
+      enableDeselect
+      tolerance={5}
+      globalMouse={true}
+      allowClickWithoutSelected={false}
+      duringSelection={handleSelecting}
+      onSelectionClear={handleSelectionClear}
+      onSelectionFinish={handleSelectionFinish}
+    >
+      <SelectAll className="selectable-button">
+        <Button>Select all</Button>
+      </SelectAll>
+      <DeselectAll className="selectable-button">
+        <Button>Clear selection</Button>
+      </DeselectAll>
+      <Card.Group itemsPerRow={3}>
+        {!items.promised && !items.error && items.keys.map((i) => (
+          <SelectableItemCard key={items[i].id.get()}
+            item={items[i]}
+            onEditItem={onEditItem}
+            selectedItems={selectedItems} />
+        ))}
+      </Card.Group>
+    </SelectableGroup>
   </Segment>
   );
 }

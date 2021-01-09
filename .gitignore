@@ -232,3 +232,6 @@ _Pvt_Extensions
 .fake/
 
 .pid
+
+# mono crash files
+**/mono_crash*.json

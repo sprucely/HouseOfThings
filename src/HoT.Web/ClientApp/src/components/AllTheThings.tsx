@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { State, useState } from '@hookstate/core';
+import { State, useState, none } from '@hookstate/core';
 import { Container, Grid, Menu, Ref } from 'semantic-ui-react';
 import { useDrop } from 'react-dnd';
 
@@ -7,7 +7,7 @@ import { TagLookup } from './TagLookup';
 import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel, TagModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { ItemList } from './ItemList';
-import { createItem, createLocation, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
+import { createItem, createLocation, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
 import { EditLocation, editLocationDefaultsGlobal } from './EditLocation';
 import { clone } from '../utilities/state';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
@@ -24,15 +24,14 @@ const defaultLocation: LocationModel = {
 };
 
 const defaultItem: ItemModel = {
-  id: 0, locationId: 0, locationName: "",
-  isActive: false, name: "", description: ""
+  id: 0, locationId: 0, locationName: "", name: "", description: "",
+  isSelected: false, isSelecting: false
 };
 
 export const AllTheThings = () => {
   const locations = useState<LocationModel[]>([]);
   const items = useState<ItemModel[]>([]);
   const hasActiveLocation = useState(false);
-  const hasActiveItem = useState(false);
   const editLocation = useState<LocationModel>(clone(defaultLocation));
   const editItem = useState<ItemModel>(clone(defaultItem));
 
@@ -62,24 +61,6 @@ export const AllTheThings = () => {
     }
   };
 
-  const activateItem = (activatedItem: State<ItemModel>) => {
-    const activeItemId = activatedItem.id.get();
-    const itemToDeactivate = !items.promised && !items.error
-      && items.find(i => i.isActive.get() && i.id.get() !== activeItemId);
-    if (itemToDeactivate) {
-      itemToDeactivate.isActive.set(false)
-    }
-    activatedItem.isActive.set(true);
-    hasActiveItem.set(true);
-  };
-
-  const activateFirstItem = () => {
-    const firstItem = !items.promised && !items.error && items.length && items[0];
-    if (firstItem) {
-      activateItem(firstItem);
-    }
-  };
-
   const requestSearchLocations = (filter: LocationFilterModel) => {
     if (locationsPromise === null) {
       locationsPromise = searchLocations(filter);
@@ -100,16 +81,13 @@ export const AllTheThings = () => {
     if (itemsPromise === null) {
       itemsPromise = searchItems(filter);
       items.set(itemsPromise);
-      itemsPromise.then(() => activateFirstItem());
     } else {
       // must be sure previous promise has resolved before calling set()...
       itemsPromise.then(() => {
         itemsPromise = searchItems(filter)
         items.set(itemsPromise);
-        itemsPromise.then(() => activateFirstItem());
       });
     }
-    hasActiveItem.set(false);
   };
 
   const handleTagsChanged = (newTags: TagModel[]) => {
@@ -118,10 +96,6 @@ export const AllTheThings = () => {
 
   const getActiveLocation = () => {
     return (!locations.promised && !locations.error && locations.find(l => l.isActive.get())) || null;
-  };
-
-  const getActiveItem = () => {
-    return (!items.promised && !items.error && items.find(i => i.isActive.get())) || null;
   };
 
   const handleAddLocation = async () => {
@@ -164,9 +138,7 @@ export const AllTheThings = () => {
 
   };
 
-  const handleEditLocation = async () => {
-    const location = getActiveLocation();
-    if (!location) return;
+  const handleEditLocation = async (location: State<LocationModel>) => {
     editLocation.merge(clone(location.value))
 
     if (await getConfirmation({ title: "Edit Location", content: () => <EditLocation location={editLocation} /> })) {
@@ -198,18 +170,14 @@ export const AllTheThings = () => {
         return merge;
       })
 
-      activateFirstItem();
       const createdItem = await createItem(addedItem);
       // replace addedItem with createdItem
       items[0].merge(createdItem);
-      activateFirstItem();
     }
 
   };
 
-  const handleEditItem = async () => {
-    const item = getActiveItem();
-    if (!item) return;
+  const handleEditItem = async (item: State<ItemModel>) => {
     editItem.merge(clone(item.value))
 
     if (await getConfirmation({ title: "Edit Item", content: () => <EditItem item={editItem} /> })) {
@@ -260,7 +228,31 @@ export const AllTheThings = () => {
         hasActiveLocation.set(false);
       }
     } else {
-      //const items = data.dragItemType === 'item' && data.dragItem as State<ItemModel>[];
+      const targetLocation = data.dropTarget;
+      const itemsToMove = ((data.dragItemType === 'items' && data.dragItem) as State<ItemModel>[])
+        .filter(item => item.locationId.get() !== targetLocation.id.get());
+
+      if (itemsToMove.length) {
+        const itemNames = itemsToMove.map(item => item.name.get()).join(', ');
+        const itemIds = itemsToMove.map(item => item.id.get());
+        if (await getConfirmation({ title: "Moving Items", content: `Moving the following item${itemsToMove.length > 1 ? 's' : ''} into ${targetLocation.name.get()}: ${itemNames}` })) {
+          await moveItems({
+            itemIds,
+            toLocationId: targetLocation.id.get()
+          });
+
+          const clearItems: { [key: number]: any } = {};
+
+          items.keys.map(k => {
+            if (itemIds.includes(items[k].id.get())) {
+              clearItems[k] = none;
+            }
+            return null;
+          })
+
+          items.merge(clearItems);
+        }
+      }
     }
   };
 
@@ -281,21 +273,18 @@ export const AllTheThings = () => {
     }
   })
 
-
   return (
     <Ref innerRef={dropLocation}>
       <div>
         <ConfirmationDialog />
-        <Menu icon='labeled' fixed='top' inverted>
+        <Menu icon='labeled' fixed='top' inverted stackable>
           <Container>
             <Menu.Item
               header
             ><h3>House of Things</h3></Menu.Item>
             <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
-            <Menu.Item icon="edit" name='Edit Location' disabled={!hasActiveLocation.get()} onClick={handleEditLocation} />
             <TagLookup onTagsChanged={handleTagsChanged} />
             <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
-            <Menu.Item icon="edit" name='Edit Thing' disabled={!hasActiveItem.get()} onClick={handleEditItem} />
           </Container>
         </Menu>
         <Grid columns={2} divided stackable>
@@ -307,6 +296,7 @@ export const AllTheThings = () => {
                 onActivateLocation={activateLocation}
                 onEnterLocation={handleEnterLocation}
                 onExitLocation={handleExitLocation}
+                onEditLocation={handleEditLocation}
                 onCanDropData={handleCanDropData}
                 onDropData={handleDropData}
               />
@@ -314,7 +304,7 @@ export const AllTheThings = () => {
             <Grid.Column>
               <ItemList
                 items={items}
-                onActivateItem={activateItem}
+                onEditItem={handleEditItem}
               />
             </Grid.Column>
           </Grid.Row>

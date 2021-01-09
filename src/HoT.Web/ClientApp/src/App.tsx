@@ -9,6 +9,7 @@ import 'semantic-ui-css/semantic.min.css';
 import './App.css';
 
 import './css/fonts/flaticon/flaticon.css';
+import './css/selectable.css'
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
