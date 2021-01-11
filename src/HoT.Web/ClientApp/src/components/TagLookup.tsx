@@ -1,69 +1,103 @@
 import React, { useRef } from 'react';
-// @ts-ignore
-import ReactTags, { Tag } from 'react-tag-autocomplete';
-import Axios from 'axios';
 import { none, useState } from '@hookstate/core';
-import { Ref } from 'semantic-ui-react';
+import { Grid, Label, Search, SearchProps, Ref, Table } from 'semantic-ui-react';
+import { useDebouncedCallback } from 'use-debounce';
 
-import './TagStyles.css';
-import { TagModel } from '../types';
-import { clone } from '../utilities/state';
+import { TagModel, TagSuggestionModel } from '../types';
+import { searchTagsAsync } from '../services/data';
 
 
 type TagLookupProps = {
   onTagsChanged: (tags: TagModel[]) => void;
 }
 
-
 export const TagLookup = (props: TagLookupProps) => {
   const { onTagsChanged } = props;
 
   const tags = useState<TagModel[]>([]);
-  const suggestions = useState<TagModel[]>([]);
+  const suggestions = useState<TagSuggestionModel[]>([]);
+  const value = useState("");
+  const ref = useRef<HTMLElement>(null);
 
-  const searchTagsAsync = async (query: string) => {
-    const result = await Axios.get<TagModel[]>("/api/tags/search?q=" + encodeURIComponent(query));
-    return result.data || [];
-  }
+  const handleSearchChange = useDebouncedCallback((query: string) => {
+    suggestions.set(searchTagsAsync(query).then(
+      results => (results
+        .map(t => ({ id: t.id, title: t.name } as TagSuggestionModel))
+        .filter(tag => !tags.some(tag2 => tag2.id.get() === tag.id)))
+    ))
+  }, 250);
 
-  const tagRef = useRef<ReactTags>(null);
-
-  function handleDelete(i: number) {
+  function handleDelete(i: number | null) {
+    if (i === null) {
+      // default to deleting last tag
+      i = tags.length - 1;
+      if (i < 0) return;
+    }
     tags[i].set(none);
     onTagsChanged(tags.get());
+    if (ref.current) {
+      (ref.current.firstChild?.firstChild as HTMLElement)?.focus();
+    }
   }
 
-  function handleAddition(tag: Tag) {
-    const tagClone = clone(tag) as Tag;
-    tags.merge([tagClone]);
+  function handleAddition(_: any, { result }: { result: TagSuggestionModel }) {
+    const tag = { id: result.id, name: result.title } as TagModel;
+    tags.merge([tag]);
     onTagsChanged(tags.get());
+    const i = suggestions.findIndex(suggestion => suggestion.id.get() === result.id);
+    if (i > -1) {
+      suggestions[i].set(none);
+    }
   }
+
+  const search = (<Ref innerRef={ref}><Search
+    aligned=''
+    input={{ icon: 'search', iconPosition: 'left' }}
+    loading={suggestions.promised}
+    onResultSelect={handleAddition}
+    onSearchChange={(_, data: SearchProps) => {
+      value.set(data.value || "");
+      handleSearchChange.callback(data.value || "")
+    }}
+    results={(!suggestions.promised && !suggestions.error && suggestions.get()) || []}
+    value={value.get()}
+    noResultsMessage={suggestions.promised ? 'Searching' : 'No Tags Found'}
+    autoFocus
+  /></Ref>);
+
+  const tagLabels = (<Label.Group circular size='medium'>
+    {tags.keys.map((i) => (
+      <Label
+        key={i}
+        style={{ cursor: 'pointer' }}
+        onClick={() => handleDelete(i)}
+
+      >{tags[i].name.get()}</Label>
+    ))}
+  </Label.Group>);
 
   return (
-    <Ref innerRef={tagRef}>
-      <ReactTags
-        tags={tags.get()}
-        suggestions={(!suggestions.promised && !suggestions.error && suggestions.get()) || []}
-        onDelete={handleDelete}
-        onAddition={handleAddition}
-        onInput={(value: string) => { suggestions.set(searchTagsAsync(value)) }}
-        inputWidth={20}
-        autoResize={false}
-        //tagComponent={TagComponent}
-        //suggestionComponent={SuggestionComponent}
-        classNames={{
-          root: 'react-tags',
-          rootFocused: 'is-focused',
-          selected: 'react-tags__selected',
-          selectedTag: 'ui button',//'react-tags__selected-tag',
-          selectedTagName: 'react-tags__selected-tag-name',
-          search: 'react-tags__search',
-          //searchWrapper: 'react-tags__search-wrapper',
-          searchInput: 'ui input focus', //'react-tags__search-input',
-          suggestions: 'react-tags__suggestions',
-          suggestionActive: 'is-active',
-          suggestionDisabled: 'is-disabled'
-        }} />
-    </Ref>
+    <Table inverted basic attached collapsing textAlign='left'>
+      {!!tags.length
+        ? (
+          <>
+            <Table.Row>
+              <Table.Cell>
+                {search}
+              </Table.Cell>
+            </Table.Row>
+            <Grid.Row>
+              <Grid.Column>
+                {tagLabels}
+              </Grid.Column>
+            </Grid.Row>
+          </>)
+        : (
+          <Table.Row>
+            <Table.Cell>
+              {search}
+            </Table.Cell>
+          </Table.Row>)}
+    </Table>
   );
 }

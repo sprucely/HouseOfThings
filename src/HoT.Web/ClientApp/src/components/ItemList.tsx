@@ -80,11 +80,11 @@ function ItemCard(props: ItemProps) {
               <Image src='/logo192.png' size='small' />
               <Card.Content>
                 <div style={{ backgroundColor: isSelecting ? getColor('yellow') : isSelected ? getColor('blue') : undefined }}>
-                <List inverted={isSelecting || isSelected}>
-                  <List.Item><Card.Header>{item.name.get()}</Card.Header></List.Item>
-                  <List.Item>{item.locationName.get() && <Card.Meta size='small' disabled>Located in {item.locationName.get()}</Card.Meta>}</List.Item>
-                  <List.Item>{item.description.get() && <Card.Description size='small'>{item.description.get()}</Card.Description>}</List.Item>
-                </List>
+                  <List inverted={isSelecting || isSelected}>
+                    <List.Item><Card.Header>{item.name.get()}</Card.Header></List.Item>
+                    <List.Item>{item.locationName.get() && <Card.Meta size='small' disabled>Located in {item.locationName.get()}</Card.Meta>}</List.Item>
+                    <List.Item>{item.description.get() && <Card.Description size='small'>{item.description.get()}</Card.Description>}</List.Item>
+                  </List>
                 </div>
               </Card.Content>
             </div>
@@ -134,12 +134,6 @@ export function ItemList(props: ItemListProps) {
       onSelectionClear={handleSelectionClear}
       onSelectionFinish={handleSelectionFinish}
     >
-      <SelectAll className="selectable-button">
-        <Button>Select all</Button>
-      </SelectAll>
-      <DeselectAll className="selectable-button">
-        <Button>Clear selection</Button>
-      </DeselectAll>
       <Card.Group itemsPerRow={3}>
         {!items.promised && !items.error && items.keys.map((i) => (
           <SelectableItemCard key={items[i].id.get()}

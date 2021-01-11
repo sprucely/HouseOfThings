@@ -5,6 +5,11 @@ export type TagModel = {
   name: string
 }
 
+export type TagSuggestionModel = {
+  id: number|string,
+  title: string
+}
+
 export type TagFilterModel = {
   tags: TagModel[];
   includeAllTags: boolean;
