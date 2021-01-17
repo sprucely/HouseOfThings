@@ -1,8 +1,8 @@
 import React, { SyntheticEvent, useEffect } from 'react';
-import { Button, Card, Dimmer, Loader, Ref, Segment, Image, MenuItem, Menu, List, Header } from 'semantic-ui-react';
+import { Card, Dimmer, Loader, Ref, Segment, Image, List } from 'semantic-ui-react';
 import { State, useState } from '@hookstate/core';
 import { useDrag } from 'react-dnd';
-import { TSelectableItemProps, SelectableGroup, createSelectable, SelectAll, DeselectAll } from 'react-selectable-fast';
+import { TSelectableItemProps, SelectableGroup, createSelectable } from 'react-selectable-fast';
 
 import { DragData, DragItemTypes, ItemModel } from '../types';
 import { getColor } from '../utilities/style-overrides';

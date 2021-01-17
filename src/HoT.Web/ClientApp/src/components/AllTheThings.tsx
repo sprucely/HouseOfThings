@@ -284,6 +284,31 @@ export const AllTheThings = () => {
             ><h3>House of Things</h3></Menu.Item>
             <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
             <TagLookup onTagsChanged={handleTagsChanged} />
+            {/* <Menu.Item>
+              <Form>
+                <Form.Field>
+                  Selected value: <b>{this.state.value}</b>
+                </Form.Field>
+                <Form.Field>
+                  <Radio
+                    label='Choose this'
+                    name='radioGroup'
+                    value='this'
+                    checked={this.state.value === 'this'}
+                    onChange={this.handleChange}
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <Radio
+                    label='Or that'
+                    name='radioGroup'
+                    value='that'
+                    checked={this.state.value === 'that'}
+                    onChange={this.handleChange}
+                  />
+                </Form.Field>
+              </Form>
+            </Menu.Item> */}
             <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
           </Container>
         </Menu>

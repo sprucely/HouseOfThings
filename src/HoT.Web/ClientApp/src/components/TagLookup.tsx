@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { none, useState } from '@hookstate/core';
-import { Grid, Label, Search, SearchProps, Ref, Table } from 'semantic-ui-react';
+import { Label, Search, SearchProps, Ref, Table, Icon, Input } from 'semantic-ui-react';
 import { useDebouncedCallback } from 'use-debounce';
 
 import { TagModel, TagSuggestionModel } from '../types';
@@ -14,7 +14,7 @@ type TagLookupProps = {
 export const TagLookup = (props: TagLookupProps) => {
   const { onTagsChanged } = props;
 
-  const tags = useState<TagModel[]>([]);
+  const tags = useState<TagModel[][]>([[], []]);
   const suggestions = useState<TagSuggestionModel[]>([]);
   const value = useState("");
   const ref = useRef<HTMLElement>(null);
@@ -23,81 +23,86 @@ export const TagLookup = (props: TagLookupProps) => {
     suggestions.set(searchTagsAsync(query).then(
       results => (results
         .map(t => ({ id: t.id, title: t.name } as TagSuggestionModel))
-        .filter(tag => !tags.some(tag2 => tag2.id.get() === tag.id)))
+        .filter(tag => !tags[0].some(tag2 => tag2.id.get() === tag.id)
+          && !tags[1].some(tag2 => tag2.id.get() === tag.id)))
     ))
   }, 250);
 
-  function handleDelete(i: number | null) {
-    if (i === null) {
-      // default to deleting last tag
-      i = tags.length - 1;
-      if (i < 0) return;
-    }
-    tags[i].set(none);
-    onTagsChanged(tags.get());
+  function handleDeleteTag(i: number, j: number) {
+    tags[i][j].set(none);
+
+    const allTags: TagModel[] = [...tags[0].value, ...tags[1].value];
+
+    onTagsChanged(allTags);
     if (ref.current) {
-      (ref.current.firstChild?.firstChild as HTMLElement)?.focus();
+      (ref.current.children[0].children[1] as HTMLElement)?.focus();
     }
   }
 
-  function handleAddition(_: any, { result }: { result: TagSuggestionModel }) {
+  function handleAddTag(_: any, { result }: { result: TagSuggestionModel }) {
     const tag = { id: result.id, name: result.title } as TagModel;
-    tags.merge([tag]);
-    onTagsChanged(tags.get());
+    const row0Length = tags[0].value.reduce((acc, t) => acc + t.name, "").length;
+    const row1Length = tags[1].value.reduce((acc, t) => acc + t.name, "").length;
+
+    if (row0Length <= row1Length) {
+      tags[0].merge([tag])
+    } else {
+      tags[1].merge([tag])
+    }
+
+    const allTags: TagModel[] = [...tags[0].value, ...tags[1].value];
+
+    onTagsChanged(allTags);
     const i = suggestions.findIndex(suggestion => suggestion.id.get() === result.id);
     if (i > -1) {
       suggestions[i].set(none);
     }
   }
 
-  const search = (<Ref innerRef={ref}><Search
-    aligned=''
-    input={{ icon: 'search', iconPosition: 'left' }}
-    loading={suggestions.promised}
-    onResultSelect={handleAddition}
-    onSearchChange={(_, data: SearchProps) => {
-      value.set(data.value || "");
-      handleSearchChange.callback(data.value || "")
-    }}
-    results={(!suggestions.promised && !suggestions.error && suggestions.get()) || []}
-    value={value.get()}
-    noResultsMessage={suggestions.promised ? 'Searching' : 'No Tags Found'}
-    autoFocus
-  /></Ref>);
-
-  const tagLabels = (<Label.Group circular size='medium'>
-    {tags.keys.map((i) => (
-      <Label
-        key={i}
-        style={{ cursor: 'pointer' }}
-        onClick={() => handleDelete(i)}
-
-      >{tags[i].name.get()}</Label>
-    ))}
-  </Label.Group>);
+  const tagLabels = (<div>
+    {[0, 1].map((i) =>
+      <div key={i}>
+        {tags[i].keys.map((j) => (
+          <Label
+            circular
+            size={'small'}
+            key={j}
+            style={{ cursor: 'pointer' }}
+            onClick={() => handleDeleteTag(i, j)}
+          >{tags[i][j].name.get()}
+          </Label>
+        ))}
+      </div>
+    )}
+  </div>);
 
   return (
-    <Table inverted basic attached collapsing textAlign='left'>
-      {!!tags.length
-        ? (
-          <>
-            <Table.Row>
-              <Table.Cell>
-                {search}
-              </Table.Cell>
-            </Table.Row>
-            <Grid.Row>
-              <Grid.Column>
+    <Table basic attached collapsing textAlign='left'>
+      <Table.Row>
+        <Table.Cell>
+          <Ref innerRef={ref}>
+            <Search
+              size='mini'
+              aligned=''
+              input={<Input iconPosition='left'>
+                <Icon name='search' />
+                <input placeholder='Search' />
                 {tagLabels}
-              </Grid.Column>
-            </Grid.Row>
-          </>)
-        : (
-          <Table.Row>
-            <Table.Cell>
-              {search}
-            </Table.Cell>
-          </Table.Row>)}
+              </Input>}
+              loading={suggestions.promised}
+              onResultSelect={handleAddTag}
+              onSearchChange={(_, data: SearchProps) => {
+                value.set(data.value || "");
+                handleSearchChange.callback(data.value || "")
+              }}
+              results={(!suggestions.promised && !suggestions.error && suggestions.get()) || []}
+              value={value.get()}
+              noResultsMessage={suggestions.promised ? 'Searching' : 'No Tags Found'}
+              autoFocus
+            />
+          </Ref>
+        </Table.Cell>
+      </Table.Row>
     </Table>
   );
 }
