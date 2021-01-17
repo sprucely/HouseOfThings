@@ -17,58 +17,123 @@ let lastUsedLocationFilter: LocationFilterModel | null = null;
 
 export async function searchLocations(locationFilter: LocationFilterModel) {
   lastUsedLocationFilter = locationFilter;
-  const result = await Axios.post<LocationModel[]>("/api/locations/search", locationFilter);
-  return result.data || [];
+  try {
+    const result = await Axios.post<LocationModel[]>("/api/locations/search", locationFilter);
+    return result.data || [];
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
 }
 
 export async function fetchLocationTypes() {
-  const result = await Axios.get<LocationTypeModel[]>("/api/locations/locationtypes");
-  return result.data || [];
+  try {
+    const result = await Axios.get<LocationTypeModel[]>("/api/locations/locationtypes");
+    return result.data || [];
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
 }
 
 export async function getLocationTypeIconClasses() {
-  const locationTypes = await fetchLocationTypes();
-  const mapLocationTypeToIconClass: Record<string, string> = {};
-  (locationTypes || []).map((lt) => mapLocationTypeToIconClass[lt.name] = lt.iconClass);
-  return mapLocationTypeToIconClass;
+  try {
+    const locationTypes = await fetchLocationTypes();
+    const mapLocationTypeToIconClass: Record<string, string> = {};
+    (locationTypes || []).map((lt) => mapLocationTypeToIconClass[lt.name] = lt.iconClass);
+    return mapLocationTypeToIconClass;
+  }
+  catch (error) {
+    console.log(error);
+    return {};
+  }
 }
 
 export async function createLocation(creatingLocation: LocationModel) {
-  const result = await Axios.post<LocationModel>("/api/locations/create", creatingLocation);
-  return result.data;
+  try {
+    const result = await Axios.post<LocationModel>("/api/locations/create", creatingLocation);
+    return result.data;
+  }
+  catch (error) {
+    console.log(error);
+    return creatingLocation;
+  }
 }
 
 export async function updateLocation(updatingLocation: LocationModel) {
-  const result = await Axios.post<LocationModel>("/api/locations/update", updatingLocation);
-  return result.data;
+  try {
+    const result = await Axios.post<LocationModel>("/api/locations/update", updatingLocation);
+    return result.data;
+  }
+  catch (error) {
+    console.log(error);
+    return updatingLocation;
+  }
 }
 
 export async function moveLocation(requestMoveModel: RequestMoveLocationModel) {
-  const moveModel = { ...requestMoveModel, locationFilter: lastUsedLocationFilter } as MoveLocationModel;
-  const result = await Axios.post<LocationModel[]>("/api/locations/move", moveModel);
-  return result.data;
+  try {
+    const moveModel = { ...requestMoveModel, locationFilter: lastUsedLocationFilter } as MoveLocationModel;
+    const result = await Axios.post<LocationModel[]>("/api/locations/move", moveModel);
+    return result.data;
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
 }
 
 export async function searchItems(itemFilter: ItemFilterModel) {
-  const result = await Axios.post<ItemModel[]>("/api/items/search", itemFilter);
-  return result.data || [];
+  try {
+    const result = await Axios.post<ItemModel[]>("/api/items/search", itemFilter);
+    return result.data || [];
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
 }
 
 export async function createItem(creatingItem: ItemModel) {
-  const result = await Axios.post<ItemModel>("/api/items/create", creatingItem);
-  return result.data;
+  try {
+    const result = await Axios.post<ItemModel>("/api/items/create", creatingItem);
+    return result.data;
+  }
+  catch (error) {
+    console.log(error);
+    return creatingItem;
+  }
 }
 
 export async function updateItem(updatingItem: ItemModel) {
-  const result = await Axios.post<ItemModel>("/api/items/update", updatingItem);
-  return result.data;
+  try {
+    const result = await Axios.post<ItemModel>("/api/items/update", updatingItem);
+    return result.data;
+  }
+  catch (error) {
+    console.log(error);
+    return updatingItem;
+  }
 }
 
 export async function moveItems(moveItemsModel: MoveItemsModel) {
-  await Axios.post("/api/items/move", moveItemsModel);
+  try {
+    await Axios.post("/api/items/move", moveItemsModel);
+  }
+  catch (error) {
+    console.log(error);
+  }
 }
 
 export const searchTagsAsync = async (query: string) => {
-  const result = await Axios.get<TagModel[]>("/api/tags/search?q=" + encodeURIComponent(query));
-  return result.data || [];
+  try {
+    const result = await Axios.get<TagModel[]>("/api/tags/search?q=" + encodeURIComponent(query));
+    return result.data || [];
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
 }

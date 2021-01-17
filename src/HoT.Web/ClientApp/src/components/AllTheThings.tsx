@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { State, useState, none } from '@hookstate/core';
-import { Container, Grid, Menu, Ref } from 'semantic-ui-react';
+import { Container, Form, Grid, Menu, Ref } from 'semantic-ui-react';
 import { useDrop } from 'react-dnd';
 
-import { TagLookup } from './TagLookup';
+import { SearchData, SearchForm } from './SearchForm';
 import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel, TagModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { ItemList } from './ItemList';
@@ -90,8 +90,16 @@ export const AllTheThings = () => {
     }
   };
 
-  const handleTagsChanged = (newTags: TagModel[]) => {
-    requestSearchLocations({ locationId: null, tagFilter: { tags: newTags, includeAllTags: false } });
+  const handleSearchChanged = (searchData: SearchData) => {
+    const { search, tags, match } = searchData;
+    switch(search) {
+      case 'locations':
+        requestSearchLocations({ locationId: null, tagFilter: { tags, includeAllTags: match === 'all' } });
+        break;
+      case 'items':
+        requestSearchItems({ locationId: null, tagFilter: { tags, includeAllTags: match === 'all' } });
+        break;
+    }
   };
 
   const getActiveLocation = () => {
@@ -283,32 +291,7 @@ export const AllTheThings = () => {
               header
             ><h3>House of Things</h3></Menu.Item>
             <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
-            <TagLookup onTagsChanged={handleTagsChanged} />
-            {/* <Menu.Item>
-              <Form>
-                <Form.Field>
-                  Selected value: <b>{this.state.value}</b>
-                </Form.Field>
-                <Form.Field>
-                  <Radio
-                    label='Choose this'
-                    name='radioGroup'
-                    value='this'
-                    checked={this.state.value === 'this'}
-                    onChange={this.handleChange}
-                  />
-                </Form.Field>
-                <Form.Field>
-                  <Radio
-                    label='Or that'
-                    name='radioGroup'
-                    value='that'
-                    checked={this.state.value === 'that'}
-                    onChange={this.handleChange}
-                  />
-                </Form.Field>
-              </Form>
-            </Menu.Item> */}
+            <SearchForm onSearchDataChanged={handleSearchChanged} />
             <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
           </Container>
         </Menu>

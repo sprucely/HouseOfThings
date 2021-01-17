@@ -1,25 +1,41 @@
 import React, { useRef } from 'react';
 import { none, useState } from '@hookstate/core';
-import { Label, Search, SearchProps, Ref, Table, Icon, Input } from 'semantic-ui-react';
+import { Label, Search, SearchProps, Ref, Table, Icon, Input, Radio, Checkbox, Segment, Form } from 'semantic-ui-react';
 import { useDebouncedCallback } from 'use-debounce';
 
 import { TagModel, TagSuggestionModel } from '../types';
 import { searchTagsAsync } from '../services/data';
 
 
-type TagLookupProps = {
-  onTagsChanged: (tags: TagModel[]) => void;
+export type SearchData = {
+  tags: TagModel[];
+  search: 'locations' | 'items';
+  match: 'all' | 'any';
+};
+
+type SearchFormProps = {
+  onSearchDataChanged: (data: SearchData) => void;
 }
 
-export const TagLookup = (props: TagLookupProps) => {
-  const { onTagsChanged } = props;
+export const SearchForm = (props: SearchFormProps) => {
+  const { onSearchDataChanged } = props;
 
   const tags = useState<TagModel[][]>([[], []]);
   const suggestions = useState<TagSuggestionModel[]>([]);
   const value = useState("");
   const ref = useRef<HTMLElement>(null);
+  const search = useState<'locations' | 'items'>('locations');
+  const match = useState<'all' | 'any'>('all');
 
-  const handleSearchChange = useDebouncedCallback((query: string) => {
+  function collectSearchData() {
+    return {
+      tags: [...tags[0].value, ...tags[1].value] as TagModel[],
+      search: search.get(),
+      match: match.get()
+    }
+  }
+
+  const handleSearchInputChange = useDebouncedCallback((query: string) => {
     suggestions.set(searchTagsAsync(query).then(
       results => (results
         .map(t => ({ id: t.id, title: t.name } as TagSuggestionModel))
@@ -31,9 +47,9 @@ export const TagLookup = (props: TagLookupProps) => {
   function handleDeleteTag(i: number, j: number) {
     tags[i][j].set(none);
 
-    const allTags: TagModel[] = [...tags[0].value, ...tags[1].value];
+    const data = collectSearchData();
 
-    onTagsChanged(allTags);
+    onSearchDataChanged(data);
     if (ref.current) {
       (ref.current.children[0].children[1] as HTMLElement)?.focus();
     }
@@ -50,12 +66,28 @@ export const TagLookup = (props: TagLookupProps) => {
       tags[1].merge([tag])
     }
 
-    const allTags: TagModel[] = [...tags[0].value, ...tags[1].value];
+    const data = collectSearchData();
 
-    onTagsChanged(allTags);
+    onSearchDataChanged(data);
     const i = suggestions.findIndex(suggestion => suggestion.id.get() === result.id);
     if (i > -1) {
       suggestions[i].set(none);
+    }
+  }
+
+  function handleSearchChange(newValue: 'locations' | 'items') {
+    if (newValue !== search.get()) {
+      search.set(newValue);
+      const data = collectSearchData();
+      onSearchDataChanged(data);
+    }
+  }
+
+  function handleMatchChange(newValue: 'all' | 'any') {
+    if (newValue !== match.get()) {
+      match.set(newValue);
+      const data = collectSearchData();
+      onSearchDataChanged(data);
     }
   }
 
@@ -87,13 +119,16 @@ export const TagLookup = (props: TagLookupProps) => {
               input={<Input iconPosition='left'>
                 <Icon name='search' />
                 <input placeholder='Search' />
-                {tagLabels}
+                <div style={{ display: 'flex' }}>
+                  {tagLabels}
+
+                </div>
               </Input>}
               loading={suggestions.promised}
               onResultSelect={handleAddTag}
               onSearchChange={(_, data: SearchProps) => {
                 value.set(data.value || "");
-                handleSearchChange.callback(data.value || "")
+                handleSearchInputChange.callback(data.value || "")
               }}
               results={(!suggestions.promised && !suggestions.error && suggestions.get()) || []}
               value={value.get()}
@@ -101,6 +136,18 @@ export const TagLookup = (props: TagLookupProps) => {
               autoFocus
             />
           </Ref>
+        </Table.Cell>
+        <Table.Cell>
+          <Form inverted>
+            <div><Checkbox radio checked={search.get() === 'locations'} label='Locations' onClick={() => handleSearchChange('locations')} /></div>
+            <div><Checkbox radio checked={search.get() === 'items'} label='Things' onClick={() => handleSearchChange('items')} /></div>
+          </Form>
+        </Table.Cell>
+        <Table.Cell>
+          <Form inverted>
+            <div><Checkbox radio checked={match.get() === 'all'} label='Match All' onClick={() => handleMatchChange('all')} /></div>
+            <div><Checkbox radio checked={match.get() === 'any'} label='Match Any' onClick={() => handleMatchChange('any')} /></div>
+          </Form>
         </Table.Cell>
       </Table.Row>
     </Table>

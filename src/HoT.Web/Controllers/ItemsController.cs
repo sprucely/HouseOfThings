@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Diagnostics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -97,8 +98,8 @@ namespace HoT.Web.Controllers
         {
             var moveLocation = await _dbContext.Locations.SingleAsync(l => l.Id == moveItemsModel.ToLocationId);
 
-            var items = await _dbContext.Items.Where(i => 
-                i.LocationId != moveItemsModel.ToLocationId 
+            var items = await _dbContext.Items.Where(i =>
+                i.LocationId != moveItemsModel.ToLocationId
                 && moveItemsModel.ItemIds.Contains(i.Id))
                 .ToArrayAsync();
 
@@ -120,6 +121,7 @@ namespace HoT.Web.Controllers
             {
                 { TagFilter: { Tags: { Count: > 0 } } } => GetItemsByTagFilter(filter.TagFilter),
                 { LocationId: not null } => GetItemsByLocationId(filter.LocationId.Value),
+                _ => Enumerable.Empty<Item>().AsQueryable()
             };
 
             var models = await filteredItems
@@ -128,7 +130,7 @@ namespace HoT.Web.Controllers
                 {
                     Id = l.Id,
                     LocationId = l.LocationId,
-                    LocationName= l.Location.Name,
+                    LocationName = l.Location.Name,
                     Name = l.Name,
                     Description = l.Description,
                 })
@@ -145,21 +147,50 @@ namespace HoT.Web.Controllers
             return filteredItems;
         }
 
+        // private IQueryable<Item> GetItemsByTagFilter(TagFilterModel tagFilter)
+        // {
+        //     IQueryable<Item> filteredItems = null;
+
+        //     var tagIds = tagFilter.Tags.Select(t => t.Id).Distinct().ToArray();
+
+        //     if (tagFilter.IncludeAllTags)
+        //     {
+        //         // return items that are tagged with ALL given tags
+        //         filteredItems = _dbContext.Items.Where(i => !(tagIds.Except(i.Tags.Select(t => t.Id))).Any());
+        //     }
+        //     else
+        //     {
+        //         // return items that are tagged with ANY of given tags
+        //         filteredItems = _dbContext.Items.Where(i => (tagIds.Intersect(i.Tags.Select(t => t.Id))).Any());
+        //     }
+
+        //     return filteredItems;
+        // }
         private IQueryable<Item> GetItemsByTagFilter(TagFilterModel tagFilter)
         {
             IQueryable<Item> filteredItems = null;
-
             var tagIds = tagFilter.Tags.Select(t => t.Id).Distinct().ToArray();
 
             if (tagFilter.IncludeAllTags)
             {
                 // return items that are tagged with ALL given tags
-                filteredItems = _dbContext.Items.Where(i => !(tagIds.Except(i.Tags.Select(t => t.Id))).Any());
+                var itemIds = _dbContext.ItemsTags
+                    .Where(it => tagIds.Contains(it.TagId))
+                    .GroupBy(it => it.ItemId)
+                    .Where(g => g.Count() == tagIds.Length)
+                    .Select(g => g.Key);
+
+                filteredItems = _dbContext.Items.Where(i => itemIds.Contains(i.Id));
             }
             else
             {
                 // return items that are tagged with ANY of given tags
-                filteredItems = _dbContext.Items.Where(i => (tagIds.Intersect(i.Tags.Select(t => t.Id))).Any());
+                var itemIds = _dbContext.ItemsTags
+                    .Where(it => tagIds.Contains(it.TagId))
+                    .GroupBy(it => it.ItemId)
+                    .Select(g => g.Key);
+
+                filteredItems = _dbContext.Items.Where(i => itemIds.Contains(i.Id));
             }
 
             return filteredItems;
