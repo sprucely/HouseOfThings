@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { State, useState, none } from '@hookstate/core';
-import { Container, Form, Grid, Menu, Ref } from 'semantic-ui-react';
+import { Container, Grid, Menu, Ref } from 'semantic-ui-react';
 import { useDrop } from 'react-dnd';
 
 import { SearchData, SearchForm } from './SearchForm';
-import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel, TagModel } from '../types';
+import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { ItemList } from './ItemList';
 import { createItem, createLocation, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
@@ -43,15 +43,13 @@ export const AllTheThings = () => {
   }, []);
 
   const activateLocation = (activatedLocation: State<LocationModel>) => {
-    const activeLocationId = activatedLocation.id.get();
     const locationToDeactivate = !locations.promised && !locations.error
-      && locations.find(l => l.isActive.get() && l.id.get() !== activeLocationId);
+      && locations.find(l => l.isActive.get() && l.id.get() !== activatedLocation.id.get());
     if (locationToDeactivate) {
       locationToDeactivate.isActive.set(false)
     }
     activatedLocation.isActive.set(true);
     hasActiveLocation.set(true);
-    requestSearchItems({ locationId: activeLocationId, tagFilter: null })
   };
 
   const activateFirstLocation = () => {
@@ -90,16 +88,14 @@ export const AllTheThings = () => {
     }
   };
 
-  const handleSearchChanged = (searchData: SearchData) => {
-    const { search, tags, match } = searchData;
-    switch(search) {
-      case 'locations':
-        requestSearchLocations({ locationId: null, tagFilter: { tags, includeAllTags: match === 'all' } });
-        break;
-      case 'items':
-        requestSearchItems({ locationId: null, tagFilter: { tags, includeAllTags: match === 'all' } });
-        break;
-    }
+  const handleSearchLocationsChanged = (searchData: SearchData) => {
+    const { tags, match } = searchData;
+    requestSearchLocations({ locationId: null, tagFilter: { tags, includeAllTags: match === 'all' } });
+  };
+
+  const handleSearchItemsChanged = (searchData: SearchData) => {
+    const { tags, match } = searchData;
+    requestSearchItems({ locationId: null, tagFilter: { tags, includeAllTags: match === 'all' } });
   };
 
   const getActiveLocation = () => {
@@ -198,11 +194,13 @@ export const AllTheThings = () => {
   };
 
   const handleEnterLocation = (location: State<LocationModel>) => {
-    requestSearchLocations({ locationId: location.id.get(), tagFilter: { tags: [], includeAllTags: false } });
+    requestSearchLocations({ locationId: location.id.get(), tagFilter: null });
+    requestSearchItems({ locationId: location.id.get(), tagFilter: null })
   };
 
   const handleExitLocation = (location: State<LocationModel>) => {
-    requestSearchLocations({ locationId: location.parentId.get(), tagFilter: { tags: [], includeAllTags: false } });
+    requestSearchLocations({ locationId: location.parentId.get(), tagFilter: null });
+    requestSearchItems({ locationId: location.parentId.get(), tagFilter: null })
   };
 
   const handleCanDropData = (data: DropData) => {
@@ -291,8 +289,9 @@ export const AllTheThings = () => {
               header
             ><h3>House of Things</h3></Menu.Item>
             <Menu.Item icon="add square" name='Add Location' disabled={!hasActiveLocation.get()} onClick={handleAddLocation} />
-            <SearchForm onSearchDataChanged={handleSearchChanged} />
+            <SearchForm onSearchDataChanged={handleSearchLocationsChanged} placeholder='Search Locations' />
             <Menu.Item icon="add" name='Add Thing' disabled={!hasActiveLocation.get()} onClick={handleAddItem} position='right' />
+            <SearchForm onSearchDataChanged={handleSearchItemsChanged} placeholder='Search Things' />
           </Container>
         </Menu>
         <Grid columns={2} divided stackable>

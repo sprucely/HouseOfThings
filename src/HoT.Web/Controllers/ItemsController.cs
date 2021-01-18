@@ -121,20 +121,22 @@ namespace HoT.Web.Controllers
             {
                 { TagFilter: { Tags: { Count: > 0 } } } => GetItemsByTagFilter(filter.TagFilter),
                 { LocationId: not null } => GetItemsByLocationId(filter.LocationId.Value),
-                _ => Enumerable.Empty<Item>().AsQueryable()
+                _ => null
             };
 
-            var models = await filteredItems
-                .OrderBy(l => l.Name)
-                .Select(l => new ItemModel
-                {
-                    Id = l.Id,
-                    LocationId = l.LocationId,
-                    LocationName = l.Location.Name,
-                    Name = l.Name,
-                    Description = l.Description,
-                })
-                .ToArrayAsync();
+            var models = filteredItems != null
+                ? await filteredItems
+                    .OrderBy(l => l.Name)
+                    .Select(l => new ItemModel
+                    {
+                        Id = l.Id,
+                        LocationId = l.LocationId,
+                        LocationName = l.Location.Name,
+                        Name = l.Name,
+                        Description = l.Description,
+                    })
+                    .ToArrayAsync()
+                : new ItemModel[] { };
 
             return models;
         }

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { none, useState } from '@hookstate/core';
-import { Label, Search, SearchProps, Ref, Table, Icon, Input, Radio, Checkbox, Segment, Form } from 'semantic-ui-react';
+import { Label, Search, SearchProps, Ref, Table, Icon, Input, Checkbox, Form } from 'semantic-ui-react';
 import { useDebouncedCallback } from 'use-debounce';
 
 import { TagModel, TagSuggestionModel } from '../types';
@@ -9,28 +9,26 @@ import { searchTagsAsync } from '../services/data';
 
 export type SearchData = {
   tags: TagModel[];
-  search: 'locations' | 'items';
   match: 'all' | 'any';
 };
 
 type SearchFormProps = {
   onSearchDataChanged: (data: SearchData) => void;
+  placeholder: string;
 }
 
 export const SearchForm = (props: SearchFormProps) => {
-  const { onSearchDataChanged } = props;
+  const { onSearchDataChanged, placeholder } = props;
 
   const tags = useState<TagModel[][]>([[], []]);
   const suggestions = useState<TagSuggestionModel[]>([]);
   const value = useState("");
   const ref = useRef<HTMLElement>(null);
-  const search = useState<'locations' | 'items'>('locations');
   const match = useState<'all' | 'any'>('all');
 
   function collectSearchData() {
     return {
       tags: [...tags[0].value, ...tags[1].value] as TagModel[],
-      search: search.get(),
       match: match.get()
     }
   }
@@ -75,14 +73,6 @@ export const SearchForm = (props: SearchFormProps) => {
     }
   }
 
-  function handleSearchChange(newValue: 'locations' | 'items') {
-    if (newValue !== search.get()) {
-      search.set(newValue);
-      const data = collectSearchData();
-      onSearchDataChanged(data);
-    }
-  }
-
   function handleMatchChange(newValue: 'all' | 'any') {
     if (newValue !== match.get()) {
       match.set(newValue);
@@ -118,7 +108,7 @@ export const SearchForm = (props: SearchFormProps) => {
               aligned=''
               input={<Input iconPosition='left'>
                 <Icon name='search' />
-                <input placeholder='Search' />
+                <input placeholder={placeholder} />
                 <div style={{ display: 'flex' }}>
                   {tagLabels}
 
@@ -136,12 +126,6 @@ export const SearchForm = (props: SearchFormProps) => {
               autoFocus
             />
           </Ref>
-        </Table.Cell>
-        <Table.Cell>
-          <Form inverted>
-            <div><Checkbox radio checked={search.get() === 'locations'} label='Locations' onClick={() => handleSearchChange('locations')} /></div>
-            <div><Checkbox radio checked={search.get() === 'items'} label='Things' onClick={() => handleSearchChange('items')} /></div>
-          </Form>
         </Table.Cell>
         <Table.Cell>
           <Form inverted>
