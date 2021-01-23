@@ -170,6 +170,9 @@ export const AllTheThings = () => {
     if (await getConfirmation({ title: "Add Item", content: () => <EditItem item={editItem} /> })) {
       const addedItem = clone(editItem.value);
 
+      // this prevents weird bug of form being uneditable on every other add operation...
+      editItem.merge(clone(defaultItem));
+
       if (creatingPhotos.length) {
         const newPhotos = await createPhotos(creatingPhotos);
         addedItem.photos = newPhotos;
