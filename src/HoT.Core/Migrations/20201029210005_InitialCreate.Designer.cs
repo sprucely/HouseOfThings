@@ -159,7 +159,7 @@ namespace HoT.Core.Migrations
                     b.Property<byte[]>("Image")
                         .HasColumnType("BLOB");
 
-                    b.Property<int>("ItemId")
+                    b.Property<int?>("ItemId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
@@ -172,7 +172,7 @@ namespace HoT.Core.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("Photo");
+                    b.ToTable("Photos");
                 });
 
             modelBuilder.Entity("HoT.Core.Data.Domain.Tag", b =>
@@ -283,8 +283,7 @@ namespace HoT.Core.Migrations
                     b.HasOne("HoT.Core.Data.Domain.Item", "Item")
                         .WithMany("Photos")
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Item");
                 });

@@ -33,6 +33,8 @@ namespace HoT.Core.Data
 
         public DbSet<Tag> Tags { get; set; }
 
+        public DbSet<Photo> Photos { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // SQLite specific: Default to always using NOCASE collation

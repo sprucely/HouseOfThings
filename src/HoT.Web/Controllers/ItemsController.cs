@@ -10,6 +10,7 @@ using HoT.Core.Data;
 using HoT.Core.Data.Models;
 using HoT.Core.Data.Domain;
 using HoT.Core.Utilities;
+using EFCore.BulkExtensions;
 
 namespace HoT.Web.Controllers
 {
@@ -50,6 +51,11 @@ namespace HoT.Web.Controllers
 
             await _dbContext.SaveChangesAsync();
 
+            var photoIds = itemModel.Photos?.Where(p => p.Id > 0).Select(p => p.Id) ?? Enumerable.Empty<int>();
+
+            if (photoIds.Any())
+                await _dbContext.Photos.Where(p => photoIds.Contains(p.Id)).BatchUpdateAsync(new Photo { ItemId = item.Id });
+
             itemModel.Id = item.Id;
             itemModel.LocationName = await _dbContext.Locations
                 .Where(l => l.Id == itemModel.LocationId)
@@ -88,6 +94,27 @@ namespace HoT.Web.Controllers
             }
 
             await _dbContext.SaveChangesAsync();
+
+            // Trading round trips (cheap with Sqlite) for lighter memory load. We don't
+            // want to load images into memory just to change a name or assign a key.
+            var desiredPhotoIds = itemModel.Photos?.Where(p => p.Id > 0).Select(p => p.Id).ToArray() ?? new int[] { };
+            var existingPhotoIds = await _dbContext.Photos.Where(p => p.ItemId == item.Id).Select(p => p.Id).ToArrayAsync();
+            var addPhotos = desiredPhotoIds.Except(existingPhotoIds);
+            var deletePhotos = existingPhotoIds.Except(desiredPhotoIds);
+
+            if (addPhotos.Any())
+                await _dbContext.Photos.Where(p => addPhotos.Contains(p.Id)).BatchUpdateAsync(new Photo { ItemId = item.Id });
+
+            if (deletePhotos.Any())
+                await _dbContext.Photos.Where(p => deletePhotos.Contains(p.Id)).BatchDeleteAsync();
+
+            if (itemModel.Photos != null)
+            {
+                foreach (var photo in itemModel.Photos)
+                {
+                    await _dbContext.Photos.Where(p => p.Id == photo.Id && p.Name != photo.Name).BatchUpdateAsync(new Photo { Name = photo.Name });
+                }
+            }
 
             return itemModel;
         }
@@ -134,6 +161,7 @@ namespace HoT.Web.Controllers
                         LocationName = l.Location.Name,
                         Name = l.Name,
                         Description = l.Description,
+                        Photos = l.Photos.Select(p => new PhotoModel { Id = p.Id, ItemId = p.ItemId, Name = p.Name }).ToList()
                     })
                     .ToArrayAsync()
                 : new ItemModel[] { };
@@ -149,25 +177,6 @@ namespace HoT.Web.Controllers
             return filteredItems;
         }
 
-        // private IQueryable<Item> GetItemsByTagFilter(TagFilterModel tagFilter)
-        // {
-        //     IQueryable<Item> filteredItems = null;
-
-        //     var tagIds = tagFilter.Tags.Select(t => t.Id).Distinct().ToArray();
-
-        //     if (tagFilter.IncludeAllTags)
-        //     {
-        //         // return items that are tagged with ALL given tags
-        //         filteredItems = _dbContext.Items.Where(i => !(tagIds.Except(i.Tags.Select(t => t.Id))).Any());
-        //     }
-        //     else
-        //     {
-        //         // return items that are tagged with ANY of given tags
-        //         filteredItems = _dbContext.Items.Where(i => (tagIds.Intersect(i.Tags.Select(t => t.Id))).Any());
-        //     }
-
-        //     return filteredItems;
-        // }
         private IQueryable<Item> GetItemsByTagFilter(TagFilterModel tagFilter)
         {
             IQueryable<Item> filteredItems = null;

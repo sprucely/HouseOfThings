@@ -66,6 +66,8 @@ function ItemCard(props: ItemProps) {
     }),
   })
 
+  const photoId = item.photos.length && item.photos[0].id.get();
+
   return (
     (<Card
       raised={isSelected || isSelecting}
@@ -77,7 +79,15 @@ function ItemCard(props: ItemProps) {
         <div>
           <Ref innerRef={selectableRef}>
             <div>
-              <Image src='/logo192.png' size='small' />
+              <div style={{
+                display:'flex',
+                justifyContent:'left',
+                alignItems:'center',
+                width:'150px',
+                height:'150px'
+              }}>
+              <Image src={(photoId && `/api/photos/thumbnail/${photoId}`) || '/logo192.png'} size='small' style={{objectFit: "contain"}} />
+              </div>
               <Card.Content>
                 <div style={{ backgroundColor: isSelecting ? getColor('yellow') : isSelected ? getColor('blue') : undefined }}>
                   <List inverted={isSelecting || isSelected}>

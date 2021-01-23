@@ -160,21 +160,21 @@ namespace HoT.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Photo",
+                name: "Photos",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ItemId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ItemId = table.Column<int>(type: "INTEGER", nullable: true),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
                     Thumbnail = table.Column<byte[]>(type: "BLOB", nullable: true),
                     Image = table.Column<byte[]>(type: "BLOB", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Photo", x => x.Id);
+                    table.PrimaryKey("PK_Photos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Photo_Items_ItemId",
+                        name: "FK_Photos_Items_ItemId",
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
@@ -229,8 +229,8 @@ namespace HoT.Core.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Photo_ItemId",
-                table: "Photo",
+                name: "IX_Photos_ItemId",
+                table: "Photos",
                 column: "ItemId");
 
             migrationBuilder.CreateIndex(
@@ -254,7 +254,7 @@ namespace HoT.Core.Migrations
                 name: "LocationsTags");
 
             migrationBuilder.DropTable(
-                name: "Photo");
+                name: "Photos");
 
             migrationBuilder.DropTable(
                 name: "Tags");

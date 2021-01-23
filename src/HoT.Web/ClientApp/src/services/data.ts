@@ -1,5 +1,8 @@
 import Axios from 'axios';
-import { ItemFilterModel, ItemModel, LocationFilterModel, LocationModel, LocationTypeModel, MoveItemsModel, TagModel } from '../types';
+import {
+  EditPhotoModel, ItemFilterModel, ItemModel, LocationFilterModel,
+  LocationModel, LocationTypeModel, MoveItemsModel, PhotoModel, TagModel
+} from '../types';
 
 
 type RequestMoveLocationModel = {
@@ -127,7 +130,7 @@ export async function moveItems(moveItemsModel: MoveItemsModel) {
   }
 }
 
-export const searchTagsAsync = async (query: string) => {
+export async function searchTagsAsync(query: string) {
   try {
     const result = await Axios.get<TagModel[]>("/api/tags/search?q=" + encodeURIComponent(query));
     return result.data || [];
@@ -135,5 +138,38 @@ export const searchTagsAsync = async (query: string) => {
   catch (error) {
     console.log(error);
     return [];
+  }
+}
+
+export async function createPhotos(photos: EditPhotoModel[]) {
+  try {
+    const formData = new FormData();
+    photos.forEach((p, i) => formData.append(`names[${i}]`, p.name));
+    photos.forEach(p => {
+      formData.append("images", p.image)
+    });
+    photos.forEach(p => formData.append("thumbnails", p.thumbnail));
+    const result = await Axios.post<PhotoModel[]>('/api/photos/create',
+      formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return result.data || [];
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
+}
+
+export async function updatePhotos(photos: EditPhotoModel[]) {
+  try {
+    const formData = new FormData();
+    photos.forEach((p, i) => formData.append(`names[${i}]`, p.name));
+    photos.forEach((p, i) => formData.append(`ids[${i}]`, p.id.toString()));
+    photos.forEach(p => formData.append("images", p.image));
+    photos.forEach(p => formData.append("thumbnails", p.thumbnail));
+    await Axios.post<PhotoModel[]>('/api/photos/update',
+      formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  }
+  catch (error) {
+    console.log(error);
   }
 }

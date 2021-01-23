@@ -50,8 +50,20 @@ export type ItemModel = {
   locationName: string;
   name: string;
   description: string;
+  photos: PhotoModel[];
   isSelected: boolean;
   isSelecting: boolean;
+}
+
+export type PhotoModel = {
+    id: number;
+    itemId: number | null;
+    name: string;
+}
+
+export type EditPhotoModel = PhotoModel & {
+  thumbnail: Blob;
+  image: Blob;
 }
 
 export type MoveItemsModel = {

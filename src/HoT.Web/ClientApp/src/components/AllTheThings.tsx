@@ -7,12 +7,12 @@ import { SearchData, SearchForm } from './SearchForm';
 import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { ItemList } from './ItemList';
-import { createItem, createLocation, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
+import { createItem, createLocation, createPhotos, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation, updatePhotos } from '../services/data';
 import { EditLocation, editLocationDefaultsGlobal } from './EditLocation';
 import { clone } from '../utilities/state';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
 import { isInPath } from '../utilities/location-path';
-import { EditItem } from './EditItem';
+import { EditItem, creatingPhotos, updatingPhotos } from './EditItem';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
 let itemsPromise: Promise<ItemModel[]> | null = null;
@@ -25,7 +25,7 @@ const defaultLocation: LocationModel = {
 
 const defaultItem: ItemModel = {
   id: 0, locationId: 0, locationName: "", name: "", description: "",
-  isSelected: false, isSelecting: false
+  photos:[], isSelected: false, isSelecting: false
 };
 
 export const AllTheThings = () => {
@@ -164,9 +164,17 @@ export const AllTheThings = () => {
       return i;
     });
 
+    creatingPhotos.length = 0;
+    updatingPhotos.length = 0;
+
     if (await getConfirmation({ title: "Add Item", content: () => <EditItem item={editItem} /> })) {
       const addedItem = clone(editItem.value);
 
+      if (creatingPhotos.length) {
+        const newPhotos = await createPhotos(creatingPhotos);
+        addedItem.photos = newPhotos;
+      }
+      
       items.merge(oldItems => {
         const merge: { [key: number]: ItemModel } = {};
         merge[0] = addedItem;
@@ -184,8 +192,27 @@ export const AllTheThings = () => {
   const handleEditItem = async (item: State<ItemModel>) => {
     editItem.merge(clone(item.value))
 
+    creatingPhotos.length = 0;
+    updatingPhotos.length = 0;
+
     if (await getConfirmation({ title: "Edit Item", content: () => <EditItem item={editItem} /> })) {
       const editedItem = clone(editItem.value);
+
+      if (updatingPhotos.length) {
+        await updatePhotos(updatingPhotos);
+        editedItem.photos.forEach(p => {
+          const photo = updatingPhotos.find(u => u.id === p.id);
+          if (!!photo) {
+            p.name = photo.name;
+          }
+        });
+      }
+
+      if (creatingPhotos.length) {
+        const newPhotos = await createPhotos(creatingPhotos);
+        editedItem.photos = editedItem.photos.concat(newPhotos);
+      }
+
       item.merge(editedItem);
       const updatedItem = await updateItem(editedItem);
       item.merge(updatedItem);
