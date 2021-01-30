@@ -213,6 +213,8 @@ export const AllTheThings = () => {
 
       if (creatingPhotos.length) {
         const newPhotos = await createPhotos(creatingPhotos);
+        // remove newPhoto placeholders...
+        editedItem.photos = editedItem.photos.filter(p => !!p.id);
         editedItem.photos = editedItem.photos.concat(newPhotos);
       }
 

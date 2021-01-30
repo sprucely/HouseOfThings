@@ -59,6 +59,7 @@ export type PhotoModel = {
     id: number;
     itemId: number | null;
     name: string;
+    url: string | null;
 }
 
 export type EditPhotoModel = PhotoModel & {
