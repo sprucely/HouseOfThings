@@ -65,6 +65,7 @@ export type PhotoModel = {
 export type EditPhotoModel = PhotoModel & {
   thumbnail: Blob;
   image: Blob;
+  photosIndex: number;
 }
 
 export type MoveItemsModel = {

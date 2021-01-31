@@ -1,16 +1,46 @@
-import { State, useState } from '@hookstate/core';
+import { none, State, useState } from '@hookstate/core';
 import React, { ChangeEvent, useRef } from 'react';
-import { Card, Form, Input, Segment, Image, Button, Grid } from 'semantic-ui-react';
+import { Card, Form, Input, Segment, Image, Button, Grid, Label } from 'semantic-ui-react';
 
-import { EditPhotoModel, ItemModel } from '../types';
+import { EditPhotoModel, ItemModel, PhotoModel } from '../types';
 import { resize } from '../utilities/images';
 
 type EditItemProps = {
   item: State<ItemModel>
 }
 
+type PhotoPreviewProps = {
+  photo: State<PhotoModel>;
+  onDeletePhoto: () => void;
+}
+
 export const creatingPhotos: EditPhotoModel[] = [];
-export const updatingPhotos: EditPhotoModel[] = [];
+
+function PhotoPreviewCard(props: PhotoPreviewProps) {
+  const { photo, onDeletePhoto } = props;
+  const id = photo.id.get();
+  const url = photo.url.get() || (id && `/api/photos/thumbnail/${id}`);
+
+  return (
+    <Card raised={false} >
+      <div style={{
+        display: 'flex',
+        justifyContent: 'left',
+        alignItems: 'center',
+        width: '100px',
+        height: '100px'
+      }}>
+        <Label icon='delete' attached='top right' style={{ zIndex: '2', cursor: 'pointer' }} onClick={onDeletePhoto} />
+        <Image src={url} size='small' style={{ objectFit: "contain", zIndex: '1' }} ></Image>
+      </div>
+      <input
+        value={photo.name.get()}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => photo.name.set(e.target.value)}
+      />
+    </Card>
+  );
+
+}
 
 export function EditItem(props: EditItemProps) {
   const { item: _item } = props;
@@ -35,28 +65,14 @@ export function EditItem(props: EditItemProps) {
     }
   }
 
-  const photos = item.photos.keys.map(i => {
-    const id = item.photos[i].id.get();
-    const url = item.photos[i].url.get() || (id && `/api/photos/thumbnail/${id}`);
-
-    return (
-      <Card raised={false} key={i} >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'left',
-          alignItems: 'center',
-          width: '100px',
-          height: '100px'
-        }}>
-          <Image src={url} size='small' style={{ objectFit: "contain" }} />
-        </div>
-        <input
-          value={item.photos[i].name.get()}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => item.photos[i].name.set(e.target.value)}
-        />
-      </Card>
-    );
-  });
+  function handleDeletePhoto(i: number) {
+    const creatingIndex = creatingPhotos.findIndex(p => p.photosIndex === i);
+    if (creatingIndex > -1) {
+      creatingPhotos.splice(creatingIndex, 1);
+    }
+    item.photos[i].set(none);
+    creatingPhotos.filter(p => p.photosIndex > i).forEach(p => p.photosIndex -= 1)
+  }
 
   return (
     <Segment basic>
@@ -86,11 +102,11 @@ export function EditItem(props: EditItemProps) {
             <Grid.Column>
               <div>
                 <Card.Group itemsPerRow={6}>
-                  {photos}
+                  {item.photos.keys.map(i => <PhotoPreviewCard photo={item.photos[i]} onDeletePhoto={() => handleDeletePhoto(i)} key={i} />)}
                   <Card raised={false}>
                     <Card.Content>
+                      {/* click hidden file input to open file dialog */}
                       <Button icon='add' key='add' onClick={() => fileInputRef.current?.click()} />
-
                     </Card.Content>
                   </Card>
                 </Card.Group>
@@ -110,13 +126,6 @@ export function EditItem(props: EditItemProps) {
           }}
           style={{ display: 'none' }}
         />
-        {/* <ImageUploader
-            {...props}
-            withIcon={true}
-            onChange={handleImageDrop}
-            imgExtension={[".jpg", ".jpeg"]}
-            maxFileSize={10485760}
-          /> */}
       </Form>
     </Segment>
   )

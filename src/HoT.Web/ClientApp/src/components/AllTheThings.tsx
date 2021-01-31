@@ -7,12 +7,12 @@ import { SearchData, SearchForm } from './SearchForm';
 import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { ItemList } from './ItemList';
-import { createItem, createLocation, createPhotos, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation, updatePhotos } from '../services/data';
+import { createItem, createLocation, createPhotos, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
 import { EditLocation, editLocationDefaultsGlobal } from './EditLocation';
 import { clone } from '../utilities/state';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
 import { isInPath } from '../utilities/location-path';
-import { EditItem, creatingPhotos, updatingPhotos } from './EditItem';
+import { EditItem, creatingPhotos } from './EditItem';
 
 let locationsPromise: Promise<LocationModel[]> | null = null;
 let itemsPromise: Promise<ItemModel[]> | null = null;
@@ -165,7 +165,6 @@ export const AllTheThings = () => {
     });
 
     creatingPhotos.length = 0;
-    updatingPhotos.length = 0;
 
     if (await getConfirmation({ title: "Add Item", content: () => <EditItem item={editItem} /> })) {
       const addedItem = clone(editItem.value);
@@ -196,20 +195,12 @@ export const AllTheThings = () => {
     editItem.merge(clone(item.value))
 
     creatingPhotos.length = 0;
-    updatingPhotos.length = 0;
 
     if (await getConfirmation({ title: "Edit Item", content: () => <EditItem item={editItem} /> })) {
       const editedItem = clone(editItem.value);
 
-      if (updatingPhotos.length) {
-        await updatePhotos(updatingPhotos);
-        editedItem.photos.forEach(p => {
-          const photo = updatingPhotos.find(u => u.id === p.id);
-          if (!!photo) {
-            p.name = photo.name;
-          }
-        });
-      }
+      // this prevents weird bug of form being uneditable on every other edit operation...
+      editItem.merge(clone(defaultItem));
 
       if (creatingPhotos.length) {
         const newPhotos = await createPhotos(creatingPhotos);
