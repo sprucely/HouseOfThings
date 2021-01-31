@@ -1,9 +1,10 @@
 import { none, State, useState } from '@hookstate/core';
 import React, { ChangeEvent, useRef } from 'react';
-import { Card, Form, Input, Segment, Image, Button, Grid, Label } from 'semantic-ui-react';
+import { Card, Form, Input, Segment, Image, Button, Grid, Label, Popup } from 'semantic-ui-react';
 
 import { EditPhotoModel, ItemModel, PhotoModel } from '../types';
-import { resize } from '../utilities/images';
+import { dataURItoBlob, resize } from '../utilities/images';
+import { Camera } from './Camera';
 
 type EditItemProps = {
   item: State<ItemModel>
@@ -30,7 +31,7 @@ function PhotoPreviewCard(props: PhotoPreviewProps) {
         width: '100px',
         height: '100px'
       }}>
-        <Label icon='delete' attached='top right' style={{ zIndex: '2', cursor: 'pointer' }} onClick={onDeletePhoto} />
+        <Popup content='Delete Photo' trigger={(<Label icon='delete' attached='top right' style={{ zIndex: '2', cursor: 'pointer' }} onClick={onDeletePhoto} />)} />
         <Image src={url} size='small' style={{ objectFit: "contain", zIndex: '1' }} ></Image>
       </div>
       <input
@@ -47,6 +48,7 @@ export function EditItem(props: EditItemProps) {
 
   const item = useState(_item);
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraActive = useState(false);
 
   async function handleImagesAdded(files: FileList | null) {
     if (!files)
@@ -57,12 +59,24 @@ export function EditItem(props: EditItemProps) {
         const photo = { name: files[i].name.split('.').slice(0, -1).join('.') } as EditPhotoModel;
         photo.image = (await resize(files[i], 1024, 1024, 95, 'blob', 200, 200)) as Blob;
         photo.thumbnail = (await resize(files[i], 150, 150, 95, 'blob', 50, 50)) as Blob;
+        photo.photosIndex = item.photos.length;
         creatingPhotos.push(photo);
         item.photos.merge([{ name: photo.name, itemId: item.id.get(), id: 0, url: URL.createObjectURL(photo.thumbnail) }])
       }
     } catch (err) {
       console.log(err)
     }
+  }
+
+  async function handlePhotoCapture(dataUri: string) {
+    cameraActive.set(false);
+    const blob = dataURItoBlob(dataUri);
+    const photo = { name: `img_${item.photos.length}` } as EditPhotoModel;
+    photo.image = (await resize(blob, 1024, 1024, 95, 'blob', 200, 200)) as Blob;
+    photo.thumbnail = (await resize(blob, 150, 150, 95, 'blob', 50, 50)) as Blob;
+    photo.photosIndex = item.photos.length;
+    creatingPhotos.push(photo);
+    item.photos.merge([{ name: photo.name, itemId: item.id.get(), id: 0, url: URL.createObjectURL(photo.thumbnail) }])
   }
 
   function handleDeletePhoto(i: number) {
@@ -80,8 +94,8 @@ export function EditItem(props: EditItemProps) {
         <Form.Group widths='equal'>
           <Form.Field
             control={Input}
-            label='Location Name'
-            placeholder='Location Name'
+            label='Item Name'
+            placeholder='Item Name'
             value={item.name.get() || ""}
             onChange={(_: any, { value }: { value: string }) => item.name.set(value)}
             autoFocus
@@ -103,10 +117,11 @@ export function EditItem(props: EditItemProps) {
               <div>
                 <Card.Group itemsPerRow={6}>
                   {item.photos.keys.map(i => <PhotoPreviewCard photo={item.photos[i]} onDeletePhoto={() => handleDeletePhoto(i)} key={i} />)}
-                  <Card raised={false}>
+                  <Card raised={false} key='add'>
                     <Card.Content>
                       {/* click hidden file input to open file dialog */}
-                      <Button icon='add' key='add' onClick={() => fileInputRef.current?.click()} />
+                      <Popup content='Add Photo' trigger={<Button icon='add' onClick={() => fileInputRef.current?.click()} />} />
+                      <Popup content='Snap Photo' trigger={<Button icon='camera' onClick={() => cameraActive.set(true)} />} />
                     </Card.Content>
                   </Card>
                 </Card.Group>
@@ -127,6 +142,8 @@ export function EditItem(props: EditItemProps) {
           style={{ display: 'none' }}
         />
       </Form>
+      {cameraActive.get() && <Camera onSnapPhoto={handlePhotoCapture} />}
+
     </Segment>
   )
 }

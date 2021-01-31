@@ -1,9 +1,35 @@
 import Resizer from 'react-image-file-resizer';
 
 
-export function resize(imageFile: File, maxWidth: number, maxHeight: number, quality: number,
+export function resize(imageFile: Blob, maxWidth: number, maxHeight: number, quality: number,
     outputType: 'base64' | 'blob', minWidth: number, minHeight: number) {
     return new Promise<string | Blob | ProgressEvent<FileReader>>(
         (res) => Resizer.imageFileResizer(imageFile, maxWidth, maxHeight,
              'JPEG', quality, 0, res, outputType, minWidth, minHeight));
 }
+
+export function dataURItoBlob(dataURI: string) {
+    // convert base64 to raw binary data held in a string
+    // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+    var byteString = atob(dataURI.split(',')[1]);
+  
+    // separate out the mime component
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+  
+    // write the bytes of the string to an ArrayBuffer
+    var ab = new ArrayBuffer(byteString.length);
+  
+    // create a view into the buffer
+    var ia = new Uint8Array(ab);
+  
+    // set the bytes of the buffer to the correct values
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+  
+    // write the ArrayBuffer to a blob, and you're done
+    var blob = new Blob([ab], {type: mimeString});
+    return blob;
+  
+  }
+  
