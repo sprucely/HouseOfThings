@@ -121,6 +121,15 @@ export async function updateItem(updatingItem: ItemModel) {
   }
 }
 
+export async function deleteItem(itemId: number) {
+  try {
+    await Axios.post(`/api/items/delete/${itemId}`);
+  }
+  catch (error) {
+    console.log(error);
+  }
+}
+
 export async function moveItems(moveItemsModel: MoveItemsModel) {
   try {
     await Axios.post("/api/items/move", moveItemsModel);

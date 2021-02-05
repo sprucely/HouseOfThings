@@ -24,16 +24,16 @@ function PhotoPreviewCard(props: PhotoPreviewProps) {
 
   return (
     <Card raised={false} >
-      <div style={{
-        display: 'flex',
-        justifyContent: 'left',
-        alignItems: 'center',
-        width: '100px',
-        height: '100px'
-      }}>
-        <Popup content='Delete Photo' trigger={(<Label icon='delete' attached='top right' style={{ zIndex: '2', cursor: 'pointer' }} onClick={onDeletePhoto} />)} />
-        <Image src={url} size='small' style={{ objectFit: "contain", zIndex: '1' }} ></Image>
-      </div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100px',
+          height: '100px'
+        }}>
+          <Image src={url} size='small' style={{ objectFit: "scale-down", maxWidth: "100%", maxHeight: "100%" }} />
+          <Popup content='Delete Photo' trigger={(<Label icon='delete' attached='top right' style={{ zIndex: '2', cursor: 'pointer' }} onClick={onDeletePhoto} />)} />
+        </div>
       <input
         value={photo.name.get()}
         onChange={(e: ChangeEvent<HTMLInputElement>) => photo.name.set(e.target.value)}

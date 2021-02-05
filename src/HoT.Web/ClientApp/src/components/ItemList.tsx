@@ -1,5 +1,5 @@
 import React, { SyntheticEvent, useEffect } from 'react';
-import { Card, Dimmer, Loader, Ref, Segment, Image, List } from 'semantic-ui-react';
+import { Card, Dimmer, Loader, Ref, Segment, Image, List, Popup, Label } from 'semantic-ui-react';
 import { State, useState } from '@hookstate/core';
 import { useDrag } from 'react-dnd';
 import { TSelectableItemProps, SelectableGroup, createSelectable } from 'react-selectable-fast';
@@ -10,6 +10,7 @@ import { getColor } from '../utilities/style-overrides';
 type ItemListProps = {
   items: State<ItemModel[]>;
   onEditItem: (editItem: State<ItemModel>) => void;
+  onDeleteItem: (i: number) => void;
 };
 
 
@@ -17,6 +18,7 @@ type ItemProps = TSelectableItemProps & {
   item: State<ItemModel>;
   selectedItems: State<ItemModel>[]; // for drag/drop purposes
   onEditItem: (editItem: State<ItemModel>) => void;
+  onDeleteItem: () => void;
 }
 
 
@@ -24,6 +26,7 @@ function ItemCard(props: ItemProps) {
   const {
     item: _item,
     selectedItems,
+    onDeleteItem,
     onEditItem,
     selectableRef,
     isSelected,
@@ -44,13 +47,11 @@ function ItemCard(props: ItemProps) {
   }, [isSelected, isSelecting, item]);
 
   const handleItemClick = () => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   };
 
   const handleItemDoubleClick = (e: SyntheticEvent) => {
     onEditItem(item);
     e.preventDefault();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   };
 
   const [, drag] = useDrag({
@@ -80,13 +81,14 @@ function ItemCard(props: ItemProps) {
           <Ref innerRef={selectableRef}>
             <div>
               <div style={{
-                display:'flex',
-                justifyContent:'left',
-                alignItems:'center',
-                width:'150px',
-                height:'150px'
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '150px',
+                height: '150px'
               }}>
-              <Image src={(photoId && `/api/photos/thumbnail/${photoId}`) || '/logo192.png'} size='small' style={{objectFit: "contain"}} />
+                <Image src={(photoId && `/api/photos/thumbnail/${photoId}`) || '/logo192.png'} size='small' style={{ objectFit: "scale-down" }} />
+                <Popup content='Delete Item' trigger={(<Label icon='delete' attached='top right' style={{ zIndex: '2', cursor: 'pointer' }} onClick={onDeleteItem} />)} />
               </div>
               <Card.Content>
                 <div style={{ backgroundColor: isSelecting ? getColor('yellow') : isSelected ? getColor('blue') : undefined }}>
@@ -112,6 +114,7 @@ export function ItemList(props: ItemListProps) {
   const {
     items: _items,
     onEditItem,
+    onDeleteItem
   } = props;
 
   const items = useState(_items);
@@ -149,6 +152,7 @@ export function ItemList(props: ItemListProps) {
           <SelectableItemCard key={items[i].id.get()}
             item={items[i]}
             onEditItem={onEditItem}
+            onDeleteItem={() => onDeleteItem(i)}
             selectedItems={selectedItems} />
         ))}
       </Card.Group>

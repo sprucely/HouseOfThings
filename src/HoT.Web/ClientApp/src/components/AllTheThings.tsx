@@ -7,7 +7,7 @@ import { SearchData, SearchForm } from './SearchForm';
 import { DragDataItem, DragItemTypes, DropData, ItemFilterModel, ItemModel, LocationFilterModel, LocationModel } from '../types';
 import { LocationTree } from './LocationTree';
 import { ItemList } from './ItemList';
-import { createItem, createLocation, createPhotos, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
+import { createItem, createLocation, createPhotos, deleteItem, moveItems, moveLocation, searchItems, searchLocations, updateItem, updateLocation } from '../services/data';
 import { EditLocation, editLocationDefaultsGlobal } from './EditLocation';
 import { clone } from '../utilities/state';
 import { ConfirmationDialog, useConfirmationDialog } from './ConfirmationDialog';
@@ -191,6 +191,15 @@ export const AllTheThings = () => {
 
   };
 
+  const handleDeleteItem = async (i: number) => {
+    const itemName = items[i].name.get();
+    const itemId = items[i].id.get();
+    if (await getConfirmation({title: "Delete Item", content: `${itemName} will be permanently deleted.` })) {
+      await deleteItem(itemId);
+      items[i].set(none);
+    }
+  }
+
   const handleEditItem = async (item: State<ItemModel>) => {
     editItem.merge(clone(item.value))
 
@@ -335,6 +344,7 @@ export const AllTheThings = () => {
               <ItemList
                 items={items}
                 onEditItem={handleEditItem}
+                onDeleteItem={handleDeleteItem}
               />
             </Grid.Column>
           </Grid.Row>

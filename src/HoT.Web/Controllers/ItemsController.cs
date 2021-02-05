@@ -140,6 +140,16 @@ namespace HoT.Web.Controllers
             return Ok();
         }
 
+        [HttpPost("delete/{id}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            await _dbContext.Photos.Where(p => p.ItemId == id).BatchDeleteAsync();
+            await _dbContext.ItemsTags.Where(it => it.ItemId == id).BatchDeleteAsync();
+            await _dbContext.Items.Where(i => i.Id == id).BatchDeleteAsync();
+
+            return Ok();
+        }
+
         [HttpPost]
         [Route("search")]
         public async Task<ActionResult<IEnumerable<ItemModel>>> Search([FromBody] ItemFilterModel filter)
