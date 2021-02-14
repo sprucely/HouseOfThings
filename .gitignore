@@ -235,3 +235,6 @@ _Pvt_Extensions
 
 # mono crash files
 **/mono_crash*.json
+
+#sqlite files
+*.sqlite3
