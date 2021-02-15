@@ -10,6 +10,7 @@ using HoT.Core.Data;
 using Microsoft.Data.Sqlite;
 using System.Data;
 using System;
+using System.Linq;
 
 namespace HoT.Web
 {
@@ -90,7 +91,7 @@ namespace HoT.Web
 
             dbContext.Database.Migrate();
             
-            if (recreateDb)
+            if (recreateDb || !dbContext.Locations.Any())
             {
                 var initialier = new DbInitializer(dbContext);
                 initialier.Initialize().GetAwaiter().GetResult();
