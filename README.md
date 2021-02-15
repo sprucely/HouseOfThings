@@ -8,6 +8,7 @@ Just a simple inventory app to help bring some sanity to the Household of Things
   - [Table of Contents](#table-of-contents)
   - [Security](#security)
   - [Background](#background)
+  - [Try it Out](#try-it-out)
   - [Building and Running](#building-and-running)
   - [Maintainers](#maintainers)
   - [Contributing](#contributing)
@@ -29,18 +30,34 @@ of your stuff. I created this app to help reduce the friction that can occur whe
 I did find some existing apps that pretty much do the same thing, however they stored your data with a third-party service. Sorry,
 but no. I don't care to have my entire inventory of valuables published when a service is inevitably compromised.
 
-## Building and Running
+## Try it Out
 
 The app is intended to be served from a docker container, which is easily deployable to a networked device, such as a Raspberry Pi or a
-Synology NAS. I won't go into details of setting up a development environment, but below are some basic commands for getting up and
-running...
+Synology NAS. The following command will run the app directly from an image downloaded from [Docker Hub](https://hub.docker.com/).
+Replace [DATA] with an absolute path to a local folder...
+
+```
+docker run --rm -it -p 8000:80 \
+  -v [DATA]:/data \
+  -e ConnectionStrings:DefaultConnection="Data Source=/data/HouseOfThings.sqlite3" \
+  spruceness/house-of-things
+```
+
+After starting the app, open a browser tab and navigate to http://localhost:8000. You should be presented with the House of Things app
+with the pane on the left filled with some default locations. The file `HouseOfThings.sqlite3` will be created in your local data
+folder. Once you setup a production container, I recommend you establish some method of automatically backing up the sqlite db.
+
+## Building and Running
+
+I won't go into details of setting up a development environment, but below are some basic commands for getting up and running...
 
 Build docker image
 ```
 docker build -t hot_web_app .
 ```
 
-Run container without ssl (device camera feature won't work) replacing [DATA] with an appropriate local absolute path. The file `HouseOfThings.sqlite3` will be created in your local data folder.
+Run container without ssl (device camera feature won't work) replacing [DATA] with an appropriate local absolute path. The file
+`HouseOfThings.sqlite3` will be created in your local data folder.
 ```
 docker run --rm -it -p 8000:80 \
   -v [DATA]:/data \
